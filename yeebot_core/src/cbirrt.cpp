@@ -41,7 +41,7 @@
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 //#include <ompl/util/String.h>
 #include "yeebot_core/cbirrt.h"
-#include "yeebot_core/yeeprojectedstatespace.h"
+//#include "yeebot_core/yeeprojectedstatespace.h"
 
 ompl::geometric::CBIRRT::CBIRRT(const base::SpaceInformationPtr &si, bool addIntermediateStates)
 : base::Planner(si, addIntermediateStates ? "CBIRRTIntermediate" : "CBIRRT")

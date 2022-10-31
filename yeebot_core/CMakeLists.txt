@@ -30,7 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system filesystem date_time thread)
-find_package(orocos_kdl REQUIRED)
+#find_package(orocos_kdl REQUIRED)
 find_package(ompl REQUIRED)
 #find_package(rviz_visual_tools REQUIRED)
 #find_package(trac_ik_lib REQUIRED)
@@ -53,10 +53,9 @@ catkin_package(
     #rviz_visual_tools
     #trac_ik_lib
                        #important
-  
   LIBRARIES 
     ${PROJECT_NAME} 
-    ${orocos_kdl_LIBRARIES}  
+   # ${orocos_kdl_LIBRARIES}  
    # ${ompl_libraries}#important
   INCLUDE_DIRS  #which is neede to indicate the include path
     include
@@ -64,7 +63,7 @@ catkin_package(
     ${OMPL_INCLUDE_DIRS}
   DEPENDS
     EIGEN3
-    orocos_kdl
+    #orocos_kdl
     #trac_ik_lib
    # ompl
 )
@@ -84,16 +83,16 @@ include_directories(
 
 
 add_library(${PROJECT_NAME}
-  src/kine_kdl.cpp
-  src/pose_constraint.cpp
-  src/iksolverpos_optp.cpp
-  src/iksolverpos_tlp.cpp
-  src/iksolverpos_trackp.cpp
-  src/iksolvervel_project.cpp
+	#src/kine_kdl.cpp
+	#src/pose_constraint.cpp
+	#src/iksolverpos_optp.cpp
+	#src/iksolverpos_tlp.cpp
+	#src/iksolverpos_trackp.cpp
+	#src/iksolvervel_project.cpp
   src/cbirrt.cpp
-  src/dual_arm/kine_dual.cpp
-  src/dual_arm/optp_closure.cpp
-  src/dual_arm/pose_constraint_dual.cpp
+  #src/dual_arm/kine_dual.cpp
+  #src/dual_arm/optp_closure.cpp
+  #src/dual_arm/pose_constraint_dual.cpp
 )
 target_link_libraries(
   ${PROJECT_NAME}
@@ -103,7 +102,8 @@ target_link_libraries(
   ${OMPL_LIBRARIES} 
   ${Boost_LIBRARIES} 
   #${orocos_kdl_LIBRARIES} 
-  "/usr/lib/x86_64-linux-gnu/libnlopt.a")
+  #"/usr/lib/x86_64-linux-gnu/libnlopt.a" # the library of NLopt for optimization
+  )
 #ompl should be OMPL
 
 # Mark executables and/or libraries for installation
@@ -118,7 +118,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
- )
+)
 
 
 
