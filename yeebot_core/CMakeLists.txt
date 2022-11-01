@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(yeebot_core)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 #debug
 #set (CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -g ")
@@ -90,6 +90,7 @@ add_library(${PROJECT_NAME}
 	#src/iksolverpos_trackp.cpp
 	#src/iksolvervel_project.cpp
   src/cbirrt.cpp
+  src/CLazyPRM.cpp
   #src/dual_arm/kine_dual.cpp
   #src/dual_arm/optp_closure.cpp
   #src/dual_arm/pose_constraint_dual.cpp

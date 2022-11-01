@@ -67,6 +67,7 @@
 #include <ompl/geometric/planners/prm/SPARS.h>
 #include <ompl/geometric/planners/prm/SPARStwo.h>
 #include <yeebot_core/cbirrt.h>
+#include <yeebot_core/CLazyPRM.h>
 
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
@@ -298,6 +299,7 @@ void ompl_interface::PlanningContextManager::registerDefaultPlanners()
   registerPlannerAllocatorHelper<og::STRIDE>("geometric::STRIDE");
   registerPlannerAllocatorHelper<og::TRRT>("geometric::TRRT");
   registerPlannerAllocatorHelper<og::CBIRRT>("geometric::CBIRRT");
+  registerPlannerAllocatorHelper<og::CLazyPRM>("geometric::CLazyPRM");
 }
 
 void ompl_interface::PlanningContextManager::registerDefaultStateSpaces()
