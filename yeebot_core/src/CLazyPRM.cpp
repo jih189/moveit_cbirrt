@@ -182,8 +182,11 @@ void ompl::geometric::CLazyPRM::setup()
     // in the state space.
     if (pdef_)
     {
-        if (pdef_->hasOptimizationObjective())
+        if (pdef_->hasOptimizationObjective()){
             opt_ = pdef_->getOptimizationObjective();
+	    // set the cost threhold to infinite so once the planner find the solution, it will return that.
+            opt_->setCostThreshold(opt_->infiniteCost());
+	}
         else
         {
             opt_ = std::make_shared<base::PathLengthOptimizationObjective>(si_);
