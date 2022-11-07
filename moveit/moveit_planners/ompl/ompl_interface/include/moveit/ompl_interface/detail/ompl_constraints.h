@@ -219,6 +219,7 @@ protected:
    * threads due to OMPL's LazyGoalSampler, we need a separate robot state in every thread.
    * */
   TSStateStorage state_storage_;
+  moveit::core::RobotState* start_state_ptr_;
   const moveit::core::JointModelGroup* joint_model_group_;
 
   // all attributes below can be considered const as soon as the constraint message is parsed

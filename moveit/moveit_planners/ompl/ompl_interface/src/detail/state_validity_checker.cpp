@@ -291,8 +291,10 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
   const kinematic_constraints::KinematicConstraintSetPtr& kset = planning_context_->getPathConstraints();
   if (kset && !kset->decide(*robot_state, verbose).satisfied)
   {
+    //if(kset)
+      //dist = kset->decide(*robot_state, verbose).distance;
     if(kset)
-      dist = kset->decide(*robot_state, verbose).distance;
+      dist = kset->decide(*robot_state, true).distance;
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     return false;
   }

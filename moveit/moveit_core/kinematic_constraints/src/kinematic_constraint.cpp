@@ -505,6 +505,25 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
     return ConstraintEvaluationResult(true, 0.0);
 
   Eigen::Vector3d pt = state.getGlobalLinkTransform(link_model_) * in_hand_pose_ * offset_;
+
+  Eigen::Isometry3d checkmatrix = state.getGlobalLinkTransform(link_model_);// * in_hand_pose_;
+
+  if(verbose)
+  {
+	  //std::cout << "robot joint values " << std::endl;
+	  //std::cout << "elbow_flex_joint " << *(state.getJointPositions("elbow_flex_joint")) << std::endl;
+	  //std::cout << "forearm_roll_joint " << *(state.getJointPositions("forearm_roll_joint")) << std::endl;
+	  //std::cout << "shoulder_lift_joint " << *(state.getJointPositions("shoulder_lift_joint")) << std::endl;
+	  //std::cout << "shoulder_pan_joint " << *(state.getJointPositions("shoulder_pan_joint")) << std::endl;
+	  //std::cout << "upperarm_roll_joint " << *(state.getJointPositions("upperarm_roll_joint")) << std::endl;
+	  //std::cout << "wrist_flex_joint " << *(state.getJointPositions("wrist_flex_joint")) << std::endl;
+	  //std::cout << "wrist_roll_joint " << *(state.getJointPositions("wrist_roll_joint")) << std::endl;
+	  std::cout << "object pose" << std::endl;
+	  std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
+	  std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
+	  std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
+	  std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
+  }
   if (mobile_frame_)
   {
     for (std::size_t i = 0; i < constraint_region_.size(); ++i)
@@ -687,12 +706,12 @@ ConstraintEvaluationResult OrientationConstraint::decide(const moveit::core::Rob
     // getFrameTransform() returns a valid isometry by contract
     Eigen::Matrix3d tmp = state.getFrameTransform(desired_rotation_frame_id_).linear() * desired_rotation_matrix_;
     // getGlobalLinkTransform() returns a valid isometry by contract
-    diff = Eigen::Isometry3d(tmp.transpose() * state.getGlobalLinkTransform(link_model_).linear() * in_hand_pose_);  // valid isometry
+    diff = Eigen::Isometry3d(tmp.transpose() * (state.getGlobalLinkTransform(link_model_) * in_hand_pose_).linear());  // valid isometry
   }
   else
   {
     // diff is valid isometry by construction
-    diff = Eigen::Isometry3d(desired_rotation_matrix_inv_ * state.getGlobalLinkTransform(link_model_).linear() * in_hand_pose_);
+    diff = Eigen::Isometry3d(desired_rotation_matrix_inv_ * (state.getGlobalLinkTransform(link_model_) * in_hand_pose_).linear());
   }
 
   // This needs to live outside the if-block scope (as xyz_rotation points to its data).
@@ -745,7 +764,7 @@ ConstraintEvaluationResult OrientationConstraint::decide(const moveit::core::Rob
 
   if (verbose)
   {
-    Eigen::Quaterniond q_act(state.getGlobalLinkTransform(link_model_).linear());
+    Eigen::Quaterniond q_act((state.getGlobalLinkTransform(link_model_) * in_hand_pose_).linear());
     Eigen::Quaterniond q_des(desired_rotation_matrix_);
     ROS_INFO_NAMED("kinematic_constraints",
                    "Orientation constraint %s for link '%s'. Quaternion desired: %f %f %f %f, quaternion "
