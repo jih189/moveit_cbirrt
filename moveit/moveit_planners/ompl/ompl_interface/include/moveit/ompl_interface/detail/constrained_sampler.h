@@ -65,11 +65,6 @@ public:
 
   double getConstrainedSamplingRate() const;
 
-  std::string getName() override
-  {
-    return "Constrained state sampler";
-  }
-
 private:
   bool sampleC(ompl::base::State* state);
 
