@@ -44,6 +44,7 @@
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/macros/class_forward.h>
 #include <moveit_msgs/Constraints.h>
+#include <moveit/planning_scene/planning_scene.h>
 
 namespace ompl_interface
 {
@@ -133,6 +134,15 @@ public:
    * */
   void init(const moveit_msgs::Constraints& constraints);
 
+  /** \brief Initialize constraint based on message content with a default robot state.
+   * 
+   * This is necessary because we cannot call the pure virtual
+   * parseConstraintsMsg method from the consturctor of this class.
+   *
+   * Becides this, this class should have a default robot state if there are other robot joints group.
+   *  */
+  void init(const moveit_msgs::Constraints& constraints, const moveit::core::RobotState& default_robot_state);
+
   /** OMPL's main constraint evaluation function.
    *
    *  OMPL requires you to override at least "function" which represents the constraint F(q) = 0
@@ -219,7 +229,6 @@ protected:
    * threads due to OMPL's LazyGoalSampler, we need a separate robot state in every thread.
    * */
   TSStateStorage state_storage_;
-  moveit::core::RobotState* start_state_ptr_;
   const moveit::core::JointModelGroup* joint_model_group_;
 
   // all attributes below can be considered const as soon as the constraint message is parsed
@@ -241,6 +250,9 @@ protected:
 
   /** \brief the in-hand object pose. That is, the object frame must be in the constrained manifold. */
   Eigen::Isometry3d in_hand_pose_;
+
+  /** \brief a default robot state. */
+  moveit::core::RobotState default_robot_state_;
 
 public:
   // Macro for classes containing fixed size eigen vectors that are dynamically allocated when used.
@@ -445,7 +457,8 @@ Bounds orientationConstraintMsgToBoundVector(const moveit_msgs::OrientationConst
 /** \brief Factory to create constraints based on what is in the MoveIt constraint message. **/
 ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelConstPtr& robot_model,
                                                 const std::string& group,
-                                                const moveit_msgs::Constraints& constraints);
+                                                const moveit_msgs::Constraints& constraints,
+						const planning_scene::PlanningSceneConstPtr& planning_scene);
 
 /** \brief  Return a matrix to convert angular velocity to angle-axis velocity
  *  Based on:

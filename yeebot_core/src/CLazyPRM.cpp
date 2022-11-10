@@ -334,6 +334,9 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
     bool someSolutionFound = false;
     unsigned int optimizingComponentSegments = 0;
 
+    int constrainedValid = 0;
+    int totalSample = 0;
+
     // Grow roadmap in lazy fashion -- add vertices and edges without checking validity
     while (!ptc)
     {
@@ -342,9 +345,9 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
 
 	// check the error on the sample point
 	double validDistance;
-	si_->getStateValidityChecker()->isValid(workState, validDistance);
-	
-	break;
+	if(si_->getStateValidityChecker()->isValid(workState, validDistance))
+		constrainedValid++;
+	totalSample++;
 	
         Vertex addedVertex = addMilestone(si_->cloneState(workState));
 
@@ -381,7 +384,7 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
                     fullyOptimized = true;
                     bestSolution = solution;
                     bestCost_ = c;
-                    break;
+                    //break;
                 }
                 if (opt_->isCostBetterThan(c, bestCost_))
                 {
@@ -391,6 +394,8 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
             }
         }
     }
+
+    std::cout << "constraint success rate = " << (double)constrainedValid / totalSample << std::endl;
 
     si_->freeState(workState);
 

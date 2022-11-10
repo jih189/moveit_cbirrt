@@ -126,10 +126,9 @@ BaseConstraint::BaseConstraint(const moveit::core::RobotModelConstPtr& robot_mod
   : ompl::base::Constraint(num_dofs, num_cons_)
   , state_storage_(robot_model)
   , joint_model_group_(robot_model->getJointModelGroup(group))
-
+  , default_robot_state_(robot_model)
 {
-	start_state_ptr_ = new moveit::core::RobotState(robot_model);
-	start_state_ptr_->setToDefaultValues();
+	default_robot_state_.setToDefaultValues();
 }
 
 void BaseConstraint::init(const moveit_msgs::Constraints& constraints)
@@ -140,11 +139,20 @@ void BaseConstraint::init(const moveit_msgs::Constraints& constraints)
   parseConstraintMsg(constraints);
 }
 
+void BaseConstraint::init(const moveit_msgs::Constraints& constraints, const moveit::core::RobotState& default_robot_state)
+{
+  // set in-hand pose
+  tf2::fromMsg(constraints.in_hand_pose, in_hand_pose_);
+
+  parseConstraintMsg(constraints);
+
+  default_robot_state_ = default_robot_state;
+}
+
 void BaseConstraint::function(const Eigen::Ref<const Eigen::VectorXd>& joint_values,
                               Eigen::Ref<Eigen::VectorXd> out) const
 {
   const Eigen::VectorXd current_values = calcError(joint_values);
-  std::cout << "error in Base constraint = " << current_values(0) << " " << current_values(1) << " " << current_values(2) << std::endl;
   out = bounds_.penalty(current_values);
 }
 
@@ -163,26 +171,24 @@ void BaseConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_val
 Eigen::Isometry3d BaseConstraint::forwardKinematics(const Eigen::Ref<const Eigen::VectorXd>& joint_values) const
 {
   moveit::core::RobotState* robot_state = state_storage_.getStateStorage();
+  (*robot_state) = default_robot_state_; 
+
   robot_state->setJointGroupPositions(joint_model_group_, joint_values);
   robot_state->updateLinkTransforms();
-  ///////////////////////////////////////////////////////////////////////////
-  start_state_ptr_->setJointGroupPositions(joint_model_group_, joint_values);
-  start_state_ptr_->updateLinkTransforms();
-  //std::cout << "joint value in forwardKinematics" << std::endl;
-  //std::cout << "elbow_flex_joint " << *(robot_state->getJointPositions("elbow_flex_joint")) << std::endl;
-  //std::cout << "forearm_roll_joint " << *(robot_state->getJointPositions("forearm_roll_joint")) << std::endl;
-  //std::cout << "shoulder_lift_joint " << *(robot_state->getJointPositions("shoulder_lift_joint")) << std::endl;
-  //std::cout << "shoulder_pan_joint " << *(robot_state->getJointPositions("shoulder_pan_joint")) << std::endl;
-  //std::cout << "upperarm_roll_joint " << *(robot_state->getJointPositions("upperarm_roll_joint")) << std::endl;
-  //std::cout << "wrist_flex_joint " << *(robot_state->getJointPositions("wrist_flex_joint")) << std::endl;
-  //std::cout << "wrist_roll_joint " << *(robot_state->getJointPositions("wrist_roll_joint")) << std::endl;
 
-  Eigen::Isometry3d temp = start_state_ptr_->getGlobalLinkTransform(link_name_);
-  std::cout << "pose in forwardKinematics" << std::endl;
-  std::cout << temp(0,0) << " " << temp(0,1) << " " << temp(0,2) << " " << temp(0,3) << std::endl;
-  std::cout << temp(1,0) << " " << temp(1,1) << " " << temp(1,2) << " " << temp(1,3) << std::endl;
-  std::cout << temp(2,0) << " " << temp(2,1) << " " << temp(2,2) << " " << temp(2,3) << std::endl;
-  std::cout << temp(3,0) << " " << temp(3,1) << " " << temp(3,2) << " " << temp(3,3) << std::endl;
+  /*
+  for(std::string joint_name: robot_state->getVariableNames())
+  {
+    std::cout << joint_name << ": " << *(robot_state->getJointPositions(joint_name)) << std::endl;
+  }
+
+  Eigen::Isometry3d checkmatrix = robot_state->getGlobalLinkTransform(link_name_) * in_hand_pose_;
+  std::cout << "pose in forward" << std::endl;
+  std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
+  std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
+  std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
+  std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
+  */
 
   return robot_state->getGlobalLinkTransform(link_name_) * in_hand_pose_;
 }
@@ -190,6 +196,7 @@ Eigen::Isometry3d BaseConstraint::forwardKinematics(const Eigen::Ref<const Eigen
 Eigen::MatrixXd BaseConstraint::robotGeometricJacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_values) const
 {
   moveit::core::RobotState* robot_state = state_storage_.getStateStorage();
+  (*robot_state) = default_robot_state_;
   robot_state->setJointGroupPositions(joint_model_group_, joint_values);
   Eigen::MatrixXd jacobian;
   // return value (success) not used, could return a garbage jacobian.
@@ -309,7 +316,7 @@ void EqualityPositionConstraint::function(const Eigen::Ref<const Eigen::VectorXd
 {
   Eigen::Vector3d error =
       target_orientation_.matrix().transpose() * (forwardKinematics(joint_values).translation() - target_position_);
-  //std::cout << "error in EqualityPositionConstraint " << error(0) << " " << error(1) << " " << error(2) << std::endl;
+  
   for (std::size_t dim = 0; dim < 3; ++dim)
   {
     if (is_dim_constrained_.at(dim))
@@ -402,7 +409,8 @@ Bounds orientationConstraintMsgToBoundVector(const moveit_msgs::OrientationConst
  * ****************************************/
 ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelConstPtr& robot_model,
                                                 const std::string& group,
-                                                const moveit_msgs::Constraints& constraints)
+                                                const moveit_msgs::Constraints& constraints,
+						const planning_scene::PlanningSceneConstPtr& planning_scene)
 {
   // TODO(bostoncleek): does this reach the end w/o a return ?
 
@@ -434,13 +442,13 @@ ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelCo
     {
       pos_con = std::make_shared<BoxConstraint>(robot_model, group, num_dofs);
     }
-    pos_con->init(constraints);
+    pos_con->init(constraints, planning_scene->getCurrentState());
     ompl_constraints.emplace_back(pos_con);
   }
   if (num_ori_con > 0)
   {
     auto ori_con = std::make_shared<OrientationConstraint>(robot_model, group, num_dofs);
-    ori_con->init(constraints);
+    ori_con->init(constraints, planning_scene->getCurrentState());
     ompl_constraints.emplace_back(ori_con);
   }
   if (num_pos_con < 1 && num_ori_con < 1)

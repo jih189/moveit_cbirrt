@@ -322,7 +322,7 @@ void ompl_interface::PlanningContextManager::setPlannerConfigurations(
 
 ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextManager::getPlanningContext(
     const planning_interface::PlannerConfigurationSettings& config, const ModelBasedStateSpaceFactoryPtr& factory, 
-    const moveit_msgs::MotionPlanRequest& req) const
+    const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene) const
 {
   // Check for a cached planning context
   ModelBasedPlanningContextPtr context;
@@ -355,10 +355,10 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
 
     if ( factory->getType() == ConstrainedPlanningStateSpace::PARAMETERIZATION_TYPE){
       ROS_DEBUG_NAMED(LOGNAME, "planning_context_manager: Using OMPL's constrained state space for planning.");
-      
+
       // Select the correct type of constraints based on the path constraints in the planning request.
       ompl::base::ConstraintPtr ompl_constraint = 
-	      createOMPLConstraints(robot_model_, config.group, req.path_constraints);
+	      createOMPLConstraints(robot_model_, config.group, req.path_constraints, planning_scene);
 
       // Create a constrained state space of type "projected state space".
       // Other types are available, so we probably should add another setting to ompl_planning.yaml
@@ -552,7 +552,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
   //else
   //  factory = getStateSpaceFactory(pc->second.group, req);
 
-  ModelBasedPlanningContextPtr context = getPlanningContext(pc->second, factory, req);
+  ModelBasedPlanningContextPtr context = getPlanningContext(pc->second, factory, req, planning_scene);
 
   if (context)
   {

@@ -294,7 +294,7 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
     //if(kset)
       //dist = kset->decide(*robot_state, verbose).distance;
     if(kset)
-      dist = kset->decide(*robot_state, true).distance;
+      dist = kset->decide(*robot_state, verbose).distance;
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     return false;
   }

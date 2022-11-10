@@ -506,23 +506,19 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
 
   Eigen::Vector3d pt = state.getGlobalLinkTransform(link_model_) * in_hand_pose_ * offset_;
 
-  Eigen::Isometry3d checkmatrix = state.getGlobalLinkTransform(link_model_);// * in_hand_pose_;
-
   if(verbose)
   {
-	  //std::cout << "robot joint values " << std::endl;
-	  //std::cout << "elbow_flex_joint " << *(state.getJointPositions("elbow_flex_joint")) << std::endl;
-	  //std::cout << "forearm_roll_joint " << *(state.getJointPositions("forearm_roll_joint")) << std::endl;
-	  //std::cout << "shoulder_lift_joint " << *(state.getJointPositions("shoulder_lift_joint")) << std::endl;
-	  //std::cout << "shoulder_pan_joint " << *(state.getJointPositions("shoulder_pan_joint")) << std::endl;
-	  //std::cout << "upperarm_roll_joint " << *(state.getJointPositions("upperarm_roll_joint")) << std::endl;
-	  //std::cout << "wrist_flex_joint " << *(state.getJointPositions("wrist_flex_joint")) << std::endl;
-	  //std::cout << "wrist_roll_joint " << *(state.getJointPositions("wrist_roll_joint")) << std::endl;
-	  std::cout << "object pose" << std::endl;
-	  std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
-	  std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
-	  std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
-	  std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
+	  //std::cout << "joint values in decide" << std::endl;
+	  //for(std::string joint_name: state.getVariableNames())
+	  //{
+	  //  std::cout << joint_name << ": " << *(state.getJointPositions(joint_name)) << std::endl;
+	  //}
+          //Eigen::Isometry3d checkmatrix = state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
+	  //std::cout << "object pose" << std::endl;
+	  //std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
+	  //std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
+	  //std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
+	  //std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
   }
   if (mobile_frame_)
   {
