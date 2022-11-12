@@ -11,6 +11,7 @@
 #include <queue>
 
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
+#include <ompl/base/goals/GoalStates.h>
 
 #include "yeebot_core/CLazyPRM.h"
 #include "GoalVisitor.hpp"
@@ -309,6 +310,7 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
         return base::PlannerStatus::INVALID_GOAL;
     }
 
+
     // Ensure there is at least one valid goal state
     if (goal->maxSampleCount() > goalM_.size() || goalM_.empty())
     {
@@ -333,21 +335,22 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
     bool fullyOptimized = false;
     bool someSolutionFound = false;
     unsigned int optimizingComponentSegments = 0;
+    int tryFindSolution = 0;
 
-    int constrainedValid = 0;
-    int totalSample = 0;
-
-    // Grow roadmap in lazy fashion -- add vertices and edges without checking validity
+    // Grow roadmap in lazy fashion -- add edges without checking validity
     while (!ptc)
     {
-        ++iterations_;
         sampler_->sampleUniform(workState);
+	// if the sampled point is not valid, then continue.
+	if(si_->isValid(workState))
+		continue;
 
-	// check the error on the sample point
-	double validDistance;
-	if(si_->getStateValidityChecker()->isValid(workState, validDistance))
-		constrainedValid++;
-	totalSample++;
+	// [jiaming hu] add goal state into goalM_ if there are new goal
+        const base::State *newGoal = pis_.nextGoal();
+        if (newGoal != nullptr)
+            goalM_.push_back(addMilestone(si_->cloneState(newGoal)));
+
+        ++iterations_;
 	
         Vertex addedVertex = addMilestone(si_->cloneState(workState));
 
@@ -373,8 +376,9 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
             base::PathPtr solution;
             do
             {
+		tryFindSolution++;
                 solution = constructSolution(startV, goalV);
-            } while (!solution && vertexComponentProperty_[startV] == vertexComponentProperty_[goalV]);
+            } while (!solution && vertexComponentProperty_[startV] == vertexComponentProperty_[goalV] && !ptc);
             if (solution)
             {
                 someSolutionFound = true;
@@ -384,7 +388,7 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
                     fullyOptimized = true;
                     bestSolution = solution;
                     bestCost_ = c;
-                    //break;
+                    break; // once the solution is found, then return it.
                 }
                 if (opt_->isCostBetterThan(c, bestCost_))
                 {
@@ -395,12 +399,15 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
         }
     }
 
-    std::cout << "constraint success rate = " << (double)constrainedValid / totalSample << std::endl;
+    std::cout << "size of goalM_ = " << goalM_.size() << std::endl;
+    std::cout << "we have tried to find solution " << tryFindSolution << " times" << std::endl;
 
     si_->freeState(workState);
 
     if (bestSolution)
     {
+	// [jiaming] add intermediate positions on the solution path.
+	std::cout << "---------- jiaming : length of solution = " << bestSolution->as<geometric::PathGeometric>()->getStates().size() << std::endl;
         base::PlannerSolution psol(bestSolution);
         psol.setPlannerName(getName());
         // if the solution was optimized, we mark it as such
@@ -563,6 +570,8 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
     // start is checked for validity already
     states.push_back(stateProperty_[start]);
 
+    std::cout << "-------------------------------find a possible solution" << std::endl;
+
     // Check the edges too, if the vertices were valid. Remove the first invalid edge only.
     std::vector<const base::State *>::const_iterator prevState = states.begin(), state = prevState + 1;
     Vertex prevVertex = goal, pos = prev[goal];
@@ -588,6 +597,8 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
         prevVertex = pos;
         pos = prev[pos];
     } while (prevVertex != pos);
+
+    std::cout << "-----------------------------------find a solutiion" << std::endl;
 
     auto p(std::make_shared<PathGeometric>(si_));
     for (std::vector<const base::State *>::const_reverse_iterator st = states.rbegin(); st != states.rend(); ++st)

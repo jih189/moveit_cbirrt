@@ -616,9 +616,6 @@ bool ompl_interface::ModelBasedPlanningContext::setGoalConstraints(
   for (const moveit_msgs::Constraints& goal_constraint : goal_constraints)
   {
     moveit_msgs::Constraints constr = kinematic_constraints::mergeConstraints(goal_constraint, path_constraints);
-    //std::cout << "check merged constraint" << std::endl;
-    //std::cout << constr.in_hand_pose.position.x << " " << constr.in_hand_pose.position.y << " " << constr.in_hand_pose.position.z << std::endl; 
-    //std::cout << constr.in_hand_pose.orientation.x << " " << constr.in_hand_pose.orientation.y << " " << constr.in_hand_pose.orientation.z << " " << constr.in_hand_pose.orientation.w << std::endl;
     kinematic_constraints::KinematicConstraintSetPtr kset(
         new kinematic_constraints::KinematicConstraintSet(getRobotModel()));
     kset->add(constr, getPlanningScene()->getTransforms());

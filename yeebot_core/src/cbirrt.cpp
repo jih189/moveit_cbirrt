@@ -284,22 +284,20 @@ ompl::base::PlannerStatus ompl::geometric::CBIRRT::solve(const base::PlannerTerm
         }
 
         /* sample random state */
-	double validDistance;
+	//double validDistance;
         sampler_->sampleUniform(rstate);
 
 	/* try to project the sampled point to the constrained manifold */
         //si_->getStateSpace()->as<base::ProjectedStateSpace>()->getConstraint()->project(rstate);
-        //bool sampleValid=si_->isValid(rstate);
-        bool sampleValid=si_->getStateValidityChecker()->isValid(rstate, validDistance);
+        bool sampleValid=si_->isValid(rstate);
+        //bool sampleValid=si_->getStateValidityChecker()->isValid(rstate, validDistance);
 	//std::cout << "[jiaming] sample result " << sampleValid << " with error " << validDistance << std::endl;
 
         while(!sampleValid){
             sampler_->sampleUniform(rstate);
-
             //si_->getStateSpace()->as<base::ProjectedStateSpace>()->getConstraint()->project(rstate);
-            //sampleValid=si_->isValid(rstate);
-            sampleValid=si_->getStateValidityChecker()->isValid(rstate, validDistance);
-	    //std::cout << "[jiaming] sample result " << sampleValid << " with error " << validDistance << std::endl;
+            sampleValid=si_->isValid(rstate);
+            //sampleValid=si_->getStateValidityChecker()->isValid(rstate, validDistance);
         }
 
 

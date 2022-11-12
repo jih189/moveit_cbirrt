@@ -56,7 +56,7 @@ namespace ompl
     namespace geometric
     {
         /**
-           @anchor gLazyPRM
+           @anchor CLazyPRM
            @par Short description
            CLazyPRM is a planner that constructs a roadmap of milestones
            that approximate the connectivity of the state space, just like PRM does.
