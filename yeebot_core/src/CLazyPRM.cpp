@@ -335,14 +335,13 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
     bool fullyOptimized = false;
     bool someSolutionFound = false;
     unsigned int optimizingComponentSegments = 0;
-    int tryFindSolution = 0;
 
     // Grow roadmap in lazy fashion -- add edges without checking validity
     while (!ptc)
     {
         sampler_->sampleUniform(workState);
 	// if the sampled point is not valid, then continue.
-	if(si_->isValid(workState))
+	if(not si_->isValid(workState))
 		continue;
 
 	// [jiaming hu] add goal state into goalM_ if there are new goal
@@ -376,7 +375,6 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
             base::PathPtr solution;
             do
             {
-		tryFindSolution++;
                 solution = constructSolution(startV, goalV);
             } while (!solution && vertexComponentProperty_[startV] == vertexComponentProperty_[goalV] && !ptc);
             if (solution)
@@ -399,15 +397,28 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
         }
     }
 
-    std::cout << "size of goalM_ = " << goalM_.size() << std::endl;
-    std::cout << "we have tried to find solution " << tryFindSolution << " times" << std::endl;
 
     si_->freeState(workState);
 
     if (bestSolution)
     {
-	// [jiaming] add intermediate positions on the solution path.
-	std::cout << "---------- jiaming : length of solution = " << bestSolution->as<geometric::PathGeometric>()->getStates().size() << std::endl;
+	// [jiaming] add intermediate positions on the solution path. Hope there is no bug.
+	std::vector<base::State*> solutionWaypoints = bestSolution->as<geometric::PathGeometric>()->getStates();
+	if(solutionWaypoints.size() > 1)
+	{
+	    std::vector<base::State*> refinedSolution;
+	    for(int s = 0; s < solutionWaypoints.size() - 1; s++)
+	    {
+                std::vector<base::State*> geodesic;
+		// run discreteGeodesic based on the constraints to generate the states between waypoints. No collision check here because it has been done
+		// before.
+		si_->getStateSpace()->as<base::ProjectedStateSpace>()->discreteGeodesic(solutionWaypoints[s], solutionWaypoints[s+1], true, &geodesic);
+		refinedSolution.insert(refinedSolution.end(), geodesic.begin(), geodesic.end());
+	    }
+	    refinedSolution.push_back(si_->cloneState(solutionWaypoints.back()));
+	    bestSolution->as<geometric::PathGeometric>()->clear();
+	    bestSolution->as<geometric::PathGeometric>()->getStates() = refinedSolution;
+	}
         base::PlannerSolution psol(bestSolution);
         psol.setPlannerName(getName());
         // if the solution was optimized, we mark it as such
@@ -530,6 +541,7 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
             states.push_back(st);
     }
 
+
     // We remove *all* invalid vertices. This is not entirely as described in the original CLazyPRM
     // paper, as the paper suggest removing the first vertex only, and then recomputing the
     // shortest path. Howeve, the paper says the focus is on efficient vertex & edge removal,
@@ -570,8 +582,6 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
     // start is checked for validity already
     states.push_back(stateProperty_[start]);
 
-    std::cout << "-------------------------------find a possible solution" << std::endl;
-
     // Check the edges too, if the vertices were valid. Remove the first invalid edge only.
     std::vector<const base::State *>::const_iterator prevState = states.begin(), state = prevState + 1;
     Vertex prevVertex = goal, pos = prev[goal];
@@ -598,7 +608,6 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
         pos = prev[pos];
     } while (prevVertex != pos);
 
-    std::cout << "-----------------------------------find a solutiion" << std::endl;
 
     auto p(std::make_shared<PathGeometric>(si_));
     for (std::vector<const base::State *>::const_reverse_iterator st = states.rbegin(); st != states.rend(); ++st)
