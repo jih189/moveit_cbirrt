@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(yeebot_core)
+project(constrained_ompl_planners)
 
-## Compile as C++11, supported in ROS Kinetic and newer
+## Compile as C++14, supported in ROS Melodic and newer
 add_compile_options(-std=c++14)
 
 #debug
@@ -35,10 +35,6 @@ find_package(ompl REQUIRED)
 #find_package(rviz_visual_tools REQUIRED)
 #find_package(trac_ik_lib REQUIRED)
 
-#set(ompl_include_dirs /home/yee/ompl_moveit/devel/include/ompl
-#)
-#set(ompl_libraries /home/yee/ompl_moveit/build/ompl/libompl.so
-#)
 catkin_package(
   CATKIN_DEPENDS
     roscpp

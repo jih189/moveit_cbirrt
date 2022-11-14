@@ -66,8 +66,8 @@
 #include <ompl/geometric/planners/prm/LazyPRMstar.h>
 #include <ompl/geometric/planners/prm/SPARS.h>
 #include <ompl/geometric/planners/prm/SPARStwo.h>
-#include <yeebot_core/cbirrt.h>
-#include <yeebot_core/CLazyPRM.h>
+#include <constrained_ompl_planners/cbirrt.h>
+#include <constrained_ompl_planners/CLazyPRM.h>
 
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>

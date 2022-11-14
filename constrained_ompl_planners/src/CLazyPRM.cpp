@@ -13,7 +13,7 @@
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include <ompl/base/goals/GoalStates.h>
 
-#include "yeebot_core/CLazyPRM.h"
+#include "constrained_ompl_planners/CLazyPRM.h"
 #include "GoalVisitor.hpp"
 
 #define foreach BOOST_FOREACH
@@ -402,23 +402,6 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
 
     if (bestSolution)
     {
-	// [jiaming] add intermediate positions on the solution path. Hope there is no bug.
-	std::vector<base::State*> solutionWaypoints = bestSolution->as<geometric::PathGeometric>()->getStates();
-	if(solutionWaypoints.size() > 1)
-	{
-	    std::vector<base::State*> refinedSolution;
-	    for(int s = 0; s < solutionWaypoints.size() - 1; s++)
-	    {
-                std::vector<base::State*> geodesic;
-		// run discreteGeodesic based on the constraints to generate the states between waypoints. No collision check here because it has been done
-		// before.
-		si_->getStateSpace()->as<base::ProjectedStateSpace>()->discreteGeodesic(solutionWaypoints[s], solutionWaypoints[s+1], true, &geodesic);
-		refinedSolution.insert(refinedSolution.end(), geodesic.begin(), geodesic.end());
-	    }
-	    refinedSolution.push_back(si_->cloneState(solutionWaypoints.back()));
-	    bestSolution->as<geometric::PathGeometric>()->clear();
-	    bestSolution->as<geometric::PathGeometric>()->getStates() = refinedSolution;
-	}
         base::PlannerSolution psol(bestSolution);
         psol.setPlannerName(getName());
         // if the solution was optimized, we mark it as such

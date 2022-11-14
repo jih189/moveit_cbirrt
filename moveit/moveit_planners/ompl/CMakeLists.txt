@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   pluginlib
   tf2
   dynamic_reconfigure
-  yeebot_core
+  constrained_ompl_planners
 )
 moveit_build_options()
 
