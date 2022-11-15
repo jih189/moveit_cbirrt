@@ -324,6 +324,16 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     const planning_interface::PlannerConfigurationSettings& config, const ModelBasedStateSpaceFactoryPtr& factory, 
     const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene) const
 {
+  std::cout << "--------------------check planner setting-----------------------" << std::endl;
+  std::cout << "planner name: " << config.name << " with " << factory->getType() << std::endl;
+  std::cout << "group name: " << config.group << std::endl;
+  for(auto it = config.config.cbegin(); it != config.config.cend(); ++it)
+  {
+    std::cout << it->first << ": " << it->second << std::endl;
+  }
+
+
+  std::cout << "----------------------------------------------------------------" << std::endl;
   // Check for a cached planning context
   ModelBasedPlanningContextPtr context;
 

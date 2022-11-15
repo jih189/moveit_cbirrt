@@ -10,7 +10,6 @@
 #include <boost/foreach.hpp>
 #include <queue>
 
-#include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include <ompl/base/goals/GoalStates.h>
 
 #include "constrained_ompl_planners/CLazyPRM.h"
