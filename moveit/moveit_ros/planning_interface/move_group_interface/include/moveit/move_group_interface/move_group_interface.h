@@ -998,6 +998,12 @@ public:
   /** \brief Get the in hand pose for planning */
   const geometry_msgs::Pose& getInHandPose() const;
 
+  /** \brief Set the action with its id */
+  void setActionWithId(const std::string action_name, const int action_id);
+
+  /** \brief Reset the action */
+  void clearAction();
+
   /**@}*/
 
 protected:

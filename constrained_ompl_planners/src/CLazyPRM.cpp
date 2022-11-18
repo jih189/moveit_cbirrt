@@ -573,8 +573,9 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
         unsigned int &evd = edgeValidityProperty_[e];
         if ((evd & VALIDITY_TRUE) == 0)
         {
-            if (si_->checkMotion(*state, *prevState))
+            if (si_->checkMotion(*state, *prevState)){
                 evd |= VALIDITY_TRUE;
+	    }
         }
         if ((evd & VALIDITY_TRUE) == 0)
         {
@@ -614,18 +615,21 @@ void ompl::geometric::CLazyPRM::getPlannerData(base::PlannerData &data) const
     for (auto i : goalM_)
         data.addGoalVertex(base::PlannerDataVertex(stateProperty_[i], 1));
 
-    // Adding edges and all other vertices simultaneously
+    // Adding only valid edges and all other vertices simultaneously
     foreach (const Edge e, boost::edges(g_))
     {
-        const Vertex v1 = boost::source(e, g_);
-        const Vertex v2 = boost::target(e, g_);
-        data.addEdge(base::PlannerDataVertex(stateProperty_[v1]), base::PlannerDataVertex(stateProperty_[v2]));
+        if ((edgeValidityProperty_[e] & VALIDITY_TRUE) == 0)
+        {
+            const Vertex v1 = boost::source(e, g_);
+            const Vertex v2 = boost::target(e, g_);
+            data.addEdge(base::PlannerDataVertex(stateProperty_[v1]), base::PlannerDataVertex(stateProperty_[v2]));
 
-        // Add the reverse edge, since we're constructing an undirected roadmap
-        data.addEdge(base::PlannerDataVertex(stateProperty_[v2]), base::PlannerDataVertex(stateProperty_[v1]));
+            // Add the reverse edge, since we're constructing an undirected roadmap
+            data.addEdge(base::PlannerDataVertex(stateProperty_[v2]), base::PlannerDataVertex(stateProperty_[v1]));
 
-        // Add tags for the newly added vertices
-        data.tagState(stateProperty_[v1], (vertexValidityProperty_[v1] & VALIDITY_TRUE) == 0 ? 0 : 1);
-        data.tagState(stateProperty_[v2], (vertexValidityProperty_[v2] & VALIDITY_TRUE) == 0 ? 0 : 1);
+            // Add tags for the newly added vertices
+            data.tagState(stateProperty_[v1], (vertexValidityProperty_[v1] & VALIDITY_TRUE) == 0 ? 0 : 1);
+            data.tagState(stateProperty_[v2], (vertexValidityProperty_[v2] & VALIDITY_TRUE) == 0 ? 0 : 1);
+	}
     }
 }

@@ -277,6 +277,11 @@ public:
     simplify_solutions_ = flag;
   }
 
+  void setExperience(bool flag)
+  {
+    include_experience_ = flag;
+  }
+
   void setInterpolation(bool flag)
   {
     interpolate_ = flag;
@@ -319,6 +324,9 @@ public:
 
   /* @brief Interpolate the solution*/
   void interpolateSolution();
+
+  /* @brief Extract the experience from the planner*/
+  void getExperience(planning_interface::MotionPlanResponse& res);
 
   /* @brief Get the solution as a RobotTrajectory object*/
   bool getSolutionPath(robot_trajectory::RobotTrajectory& traj) const;
@@ -447,5 +455,8 @@ protected:
 
   // if false parallel plan returns the first solution found
   bool hybridize_;
+
+  // if true, the planner data will be included into the response
+  bool include_experience_;
 };
 }  // namespace ompl_interface

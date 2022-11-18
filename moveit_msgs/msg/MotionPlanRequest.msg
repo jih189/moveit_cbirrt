@@ -56,3 +56,11 @@ float64 max_acceleration_scaling_factor
 # These fields require the following planning request adapter: default_planner_request_adapters/SetMaxCartesianEndEffectorSpeed
 string cartesian_speed_end_effector_link
 float64 max_cartesian_speed # m/s
+
+# action name and its id. Later, Moveit will use this two informations to select which planning context should be reused. If you don't want to
+# reuse any planning context, please ignore this.
+string action_name
+int32 action_id
+
+# experience waypoints. This is a sequence of joint configurations used to speed up planning. If you can't find any experience, then keep it empty.
+trajectory_msgs/JointTrajectoryPoint[] experience_waypoints

@@ -332,6 +332,8 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     std::cout << it->first << ": " << it->second << std::endl;
   }
 
+  std::string action_name_id = "[" + req.action_name + "][" + std::to_string(req.action_id) + "]";
+  std::cout << "current action with its id: " << action_name_id << std::endl;
 
   std::cout << "----------------------------------------------------------------" << std::endl;
   // Check for a cached planning context
@@ -339,12 +341,14 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
 
   {
     std::unique_lock<std::mutex> slock(cached_contexts_->lock_);
-    auto cached_contexts = cached_contexts_->contexts_.find(std::make_pair(config.name, factory->getType()));
+    //auto cached_contexts = cached_contexts_->contexts_.find(std::make_pair(config.name, factory->getType()));
+    auto cached_contexts = cached_contexts_->contexts_.find(std::make_pair(config.name, action_name_id));
     if (cached_contexts != cached_contexts_->contexts_.end())
     {
       for (const ModelBasedPlanningContextPtr& cached_context : cached_contexts->second)
         if (cached_context.unique())
         {
+          std::cout << "***reuse action " << action_name_id << std::endl;
           ROS_DEBUG_NAMED(LOGNAME, "Reusing cached planning context");
           context = cached_context;
           break;
@@ -356,6 +360,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
   // Create a new planning context
   if (!context)
   {
+    std::cout << "***create new planning context" << std::endl;
     ModelBasedStateSpaceSpecification space_spec(robot_model_, config.group);
     ModelBasedPlanningContextSpecification context_spec;
     context_spec.config_ = config.config;
@@ -390,7 +395,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     context = std::make_shared<ModelBasedPlanningContext>(config.name, context_spec);
     {
       std::unique_lock<std::mutex> slock(cached_contexts_->lock_);
-      cached_contexts_->contexts_[std::make_pair(config.name, factory->getType())].push_back(context);
+      cached_contexts_->contexts_[std::make_pair(config.name, action_name_id)].push_back(context);
     }
   }
 

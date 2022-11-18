@@ -59,6 +59,7 @@
 #include <moveit_msgs/GraspPlanning.h>
 #include <moveit_msgs/GetPlannerParams.h>
 #include <moveit_msgs/SetPlannerParams.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
 
 #include <std_msgs/String.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -130,6 +131,8 @@ public:
     goal_orientation_tolerance_ = 1e-3;  // ~0.1 deg
     allowed_planning_time_ = 5.0;
     num_planning_attempts_ = 1;
+    setInHandPose(0.0,0.0,0.0,0.0,0.0,0.0,1.0);
+    clearAction();
     node_handle_.param<double>("robot_description_planning/default_velocity_scaling_factor",
                                max_velocity_scaling_factor_, 0.1);
     node_handle_.param<double>("robot_description_planning/default_acceleration_scaling_factor",
@@ -1075,6 +1078,11 @@ public:
     else
       request.start_state.is_diff = true;
 
+    if(action_name_.compare("") != 0){ // there is a action with its id.
+      request.action_name = action_name_;
+      request.action_id = action_id_;
+    }
+
     if (active_target_ == JOINT)
     {
       request.goal_constraints.resize(1);
@@ -1292,9 +1300,21 @@ public:
     in_hand_pose_.orientation.w = in_hand_pose.orientation.w;
   }
 
-  geometry_msgs::Pose getInHandPose() const
+  const geometry_msgs::Pose& getInHandPose() const
   {
     return in_hand_pose_;
+  }
+
+  void setActionWithId(const std::string action_name, const int action_id)
+  {
+    action_name_ = action_name;
+    action_id_ = action_id;
+  }
+
+  void clearAction()
+  {
+    action_name_ = "";
+    action_id_ = -1;
   }
 
 private:
@@ -1375,6 +1395,10 @@ private:
 
   //[jiaming]
   geometry_msgs::Pose in_hand_pose_;
+  // this two informations will be used to select planning context.
+  std::string action_name_;
+  int action_id_;
+  std::vector<trajectory_msgs::JointTrajectoryPoint> experience_waypoints_;
 };
 
 MoveGroupInterface::MoveGroupInterface(const std::string& group_name, const std::shared_ptr<tf2_ros::Buffer>& tf_buffer,
@@ -1383,7 +1407,6 @@ MoveGroupInterface::MoveGroupInterface(const std::string& group_name, const std:
   if (!ros::ok())
     throw std::runtime_error("ROS does not seem to be running");
   impl_ = new MoveGroupInterfaceImpl(Options(group_name), tf_buffer ? tf_buffer : getSharedTF(), wait_for_servers);
-  impl_->setInHandPose(0,0,0,0,0,0,1);
 }
 
 MoveGroupInterface::MoveGroupInterface(const std::string& group, const std::shared_ptr<tf2_ros::Buffer>& tf_buffer,
@@ -1396,7 +1419,6 @@ MoveGroupInterface::MoveGroupInterface(const Options& opt, const std::shared_ptr
                                        const ros::WallDuration& wait_for_servers)
 {
   impl_ = new MoveGroupInterfaceImpl(opt, tf_buffer ? tf_buffer : getSharedTF(), wait_for_servers);
-  impl_->setInHandPose(0,0,0,0,0,0,1);
 }
 
 MoveGroupInterface::MoveGroupInterface(const MoveGroupInterface::Options& opt,
@@ -2401,6 +2423,16 @@ void MoveGroupInterface::setInHandPose(const geometry_msgs::Pose& in_hand_pose)
 const geometry_msgs::Pose& MoveGroupInterface::getInHandPose() const
 {
   return impl_->getInHandPose();
+}
+
+void MoveGroupInterface::setActionWithId(const std::string action_name, const int action_id)
+{
+  impl_->setActionWithId(action_name, action_id);
+}
+
+void MoveGroupInterface::clearAction()
+{
+  impl_->clearAction();
 }
 
 }  // namespace planning_interface

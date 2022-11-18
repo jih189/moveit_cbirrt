@@ -72,6 +72,12 @@
 #include "ompl/base/objectives/MaximizeMinClearanceObjective.h"
 #include <ompl/geometric/planners/prm/LazyPRM.h>
 
+#include <ompl/base/PlannerData.h>
+#include <ompl/base/PlannerDataGraph.h>
+#include <boost/foreach.hpp>
+
+#define foreach BOOST_FOREACH
+
 namespace ompl_interface
 {
 constexpr char LOGNAME[] = "model_based_planning_context";
@@ -98,6 +104,7 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   , simplify_solutions_(true)
   , interpolate_(true)
   , hybridize_(true)
+  , include_experience_(false)
 {
   complete_initial_robot_state_.update();
 
@@ -360,6 +367,14 @@ void ompl_interface::ModelBasedPlanningContext::useConfig()
     cfg.erase(it);
   }
 
+  // check whether the planner should return experience
+  it = cfg.find("include_experience");
+  if (it != cfg.end())
+  {
+    include_experience_ = boost::lexical_cast<bool>(it->second);
+    cfg.erase(it);
+  }
+
   // check whether the path returned by the planner should be simplified
   it = cfg.find("simplify_solutions");
   if(it != cfg.end())
@@ -457,6 +472,57 @@ void ompl_interface::ModelBasedPlanningContext::interpolateSolution()
       pg.interpolate();
     }
   }
+}
+
+void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface::MotionPlanResponse& res)
+{
+    //res.verified_vertex_id_1_.clear();
+    //res.verified_vertex_id_2_.clear();
+    //res.verified_vertex_1_.clear();
+    //res.verified_vertex_2_.clear();
+    std::cout << "extract experience from planner" << std::endl;
+    ompl::base::PlannerData data(ompl_simple_setup_->getSpaceInformation());
+    ompl_simple_setup_->getPlannerData(data);
+    std::cout << "number of edges in the graph = " << data.numEdges() << std::endl;
+    ompl::base::PlannerData::Graph::Type& graph = data.toBoostGraph();
+    boost::property_map<ompl::base::PlannerData::Graph, boost::vertex_index_t>::type indexPro(boost::get(boost::vertex_index_t(), graph));
+
+    res.verified_vertex_id_1_.resize(data.numEdges());
+    res.verified_vertex_id_2_.resize(data.numEdges());
+    res.verified_vertex_1_.resize(data.numEdges());
+    res.verified_vertex_2_.resize(data.numEdges());
+
+    moveit::core::RobotState rs1 = complete_initial_robot_state_;
+    moveit::core::RobotState rs2 = complete_initial_robot_state_;
+    std::vector<std::string> joint_names = spec_.state_space_->getJointModelGroup()->getJointModelNames();
+
+
+    int count = 0;
+    foreach (const boost::graph_traits<ompl::base::PlannerData::Graph>::edge_descriptor e, boost::edges(graph))
+    {
+        // get the edge points states
+        const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v1 = boost::source(e, graph);
+        const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v2 = boost::target(e, graph);
+	const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
+	const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
+	// get the state id of edge points
+        res.verified_vertex_id_1_[count] = indexPro[v1];
+        res.verified_vertex_id_2_[count] = indexPro[v2];
+
+	// convert the ompl state to moveit robot state
+	spec_.state_space_->copyToRobotState(rs1, st1);
+	spec_.state_space_->copyToRobotState(rs2, st2);
+
+	// set the joint names with their values
+	for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
+	{
+	    res.verified_vertex_1_[count].name.push_back(joint_name);
+	    res.verified_vertex_2_[count].name.push_back(joint_name);
+	    res.verified_vertex_1_[count].position.push_back(rs1.getVariablePosition(joint_name));
+	    res.verified_vertex_2_[count].position.push_back(rs2.getVariablePosition(joint_name));
+	}
+	count++;
+    }
 }
 
 void ompl_interface::ModelBasedPlanningContext::convertPath(const ompl::geometric::PathGeometric& pg,
@@ -718,6 +784,12 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
     if (interpolate_)
       interpolateSolution();
 
+    // include some experience into the response
+    if (include_experience_)
+    {
+       getExperience(res);
+    }
+
     // fill the response
     ROS_DEBUG_NAMED(LOGNAME, "%s: Returning successful solution with %lu states", getName().c_str(),
                     getOMPLSimpleSetup()->getSolutionPath().getStateCount());
@@ -770,6 +842,12 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
       res.trajectory_.back() = std::make_shared<robot_trajectory::RobotTrajectory>(getRobotModel(), getGroupName());
       getSolutionPath(*res.trajectory_.back());
     }
+
+    // todo: add getExperience for MotionPlanDetailedResponse
+    //if (include_experience_)
+    //{
+    //  getExperience(res);
+    //}
 
     // fill the response
     ROS_DEBUG_NAMED(LOGNAME, "%s: Returning successful solution with %lu states", getName().c_str(),
