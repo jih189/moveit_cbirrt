@@ -44,6 +44,14 @@
 
 namespace planning_interface
 {
+struct MotionEdge
+{
+  sensor_msgs::JointState verified_vertex_1_;
+  sensor_msgs::JointState verified_vertex_2_;
+  int verified_vertex_id_1_;
+  int verified_vertex_id_2_;
+};
+
 struct MotionPlanResponse
 {
   MotionPlanResponse() : planning_time_(0.0)
@@ -55,11 +63,13 @@ struct MotionPlanResponse
   robot_trajectory::RobotTrajectoryPtr trajectory_;
   double planning_time_;
   moveit_msgs::MoveItErrorCodes error_code_;
+
   // jiaming add the verified motion as the experience used later
-  std::vector<sensor_msgs::JointState> verified_vertex_1_;
-  std::vector<sensor_msgs::JointState> verified_vertex_2_;
-  std::vector<int> verified_vertex_id_1_;
-  std::vector<int> verified_vertex_id_2_;
+  std::vector<MotionEdge> motion_edges;
+  //std::vector<sensor_msgs::JointState> verified_vertex_1_;
+  //std::vector<sensor_msgs::JointState> verified_vertex_2_;
+  //std::vector<int> verified_vertex_id_1_;
+  //std::vector<int> verified_vertex_id_2_;
 };
 
 struct MotionPlanDetailedResponse

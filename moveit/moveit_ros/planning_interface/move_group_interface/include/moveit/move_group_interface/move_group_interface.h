@@ -112,6 +112,14 @@ public:
     double planning_time_;
   };
 
+  struct MotionEdge
+  {
+    sensor_msgs::JointState verified_vertex_1_;
+    sensor_msgs::JointState verified_vertex_2_;
+    int verified_vertex_id_1_;
+    int verified_vertex_id_2_;
+  };
+
   /**
       \brief Construct a MoveGroupInterface instance call using a specified set of options \e opt.
 
@@ -710,6 +718,11 @@ public:
      specified
       target. No execution is performed. The resulting plan is stored in \e plan*/
   moveit::core::MoveItErrorCode plan(Plan& plan);
+
+  /** \brief Compute a motion plan that takes the group declared in the constructor from the current state to the
+     specified target. No execution is performed. The resulting plan is stored in \e plan. Besides this, the planning
+     experience is saved in experience. */
+  moveit::core::MoveItErrorCode plan(Plan& plan, std::vector<MotionEdge>& experience);
 
   /** \brief Given a \e plan, execute it without waiting for completion. */
   moveit::core::MoveItErrorCode asyncExecute(const Plan& plan);

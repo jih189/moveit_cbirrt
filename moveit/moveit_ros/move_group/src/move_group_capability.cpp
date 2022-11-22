@@ -91,6 +91,17 @@ void move_group::MoveGroupCapability::convertToMsg(const std::vector<plan_execut
     convertToMsg(trajectory[0].trajectory_, first_state_msg, trajectory_msg);
 }
 
+void move_group::MoveGroupCapability::saveExperienceToMsg(const std::vector<planning_interface::MotionEdge>& motion_edges, moveit_msgs::VerifiedMotion& verified_motion) const
+{
+  for(planning_interface::MotionEdge e: motion_edges)
+  {
+    verified_motion.verified_vertex_1.push_back(e.verified_vertex_1_);
+    verified_motion.verified_vertex_2.push_back(e.verified_vertex_2_);
+    verified_motion.verified_vertex_id_1.push_back(e.verified_vertex_id_1_);
+    verified_motion.verified_vertex_id_2.push_back(e.verified_vertex_id_2_);
+  }
+}
+
 planning_interface::MotionPlanRequest
 move_group::MoveGroupCapability::clearRequestStartState(const planning_interface::MotionPlanRequest& request) const
 {

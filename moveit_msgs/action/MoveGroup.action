@@ -21,6 +21,9 @@ moveit_msgs/RobotTrajectory executed_trajectory
 # The amount of time it took to complete the motion plan
 float64 planning_time
 
+# Verified Motion
+VerifiedMotion verified_motion
+
 ---
 
 # The internal state that the move group action currently is in

@@ -476,10 +476,6 @@ void ompl_interface::ModelBasedPlanningContext::interpolateSolution()
 
 void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface::MotionPlanResponse& res)
 {
-    //res.verified_vertex_id_1_.clear();
-    //res.verified_vertex_id_2_.clear();
-    //res.verified_vertex_1_.clear();
-    //res.verified_vertex_2_.clear();
     std::cout << "extract experience from planner" << std::endl;
     ompl::base::PlannerData data(ompl_simple_setup_->getSpaceInformation());
     ompl_simple_setup_->getPlannerData(data);
@@ -487,10 +483,11 @@ void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface
     ompl::base::PlannerData::Graph::Type& graph = data.toBoostGraph();
     boost::property_map<ompl::base::PlannerData::Graph, boost::vertex_index_t>::type indexPro(boost::get(boost::vertex_index_t(), graph));
 
-    res.verified_vertex_id_1_.resize(data.numEdges());
-    res.verified_vertex_id_2_.resize(data.numEdges());
-    res.verified_vertex_1_.resize(data.numEdges());
-    res.verified_vertex_2_.resize(data.numEdges());
+    res.motion_edges.resize(data.numEdges());
+    //res.verified_vertex_id_1_.resize(data.numEdges());
+    //res.verified_vertex_id_2_.resize(data.numEdges());
+    //res.verified_vertex_1_.resize(data.numEdges());
+    //res.verified_vertex_2_.resize(data.numEdges());
 
     moveit::core::RobotState rs1 = complete_initial_robot_state_;
     moveit::core::RobotState rs2 = complete_initial_robot_state_;
@@ -506,8 +503,8 @@ void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface
 	const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
 	const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
 	// get the state id of edge points
-        res.verified_vertex_id_1_[count] = indexPro[v1];
-        res.verified_vertex_id_2_[count] = indexPro[v2];
+        res.motion_edges[count].verified_vertex_id_1_ = indexPro[v1];
+        res.motion_edges[count].verified_vertex_id_2_ = indexPro[v2];
 
 	// convert the ompl state to moveit robot state
 	spec_.state_space_->copyToRobotState(rs1, st1);
@@ -516,10 +513,10 @@ void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface
 	// set the joint names with their values
 	for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
 	{
-	    res.verified_vertex_1_[count].name.push_back(joint_name);
-	    res.verified_vertex_2_[count].name.push_back(joint_name);
-	    res.verified_vertex_1_[count].position.push_back(rs1.getVariablePosition(joint_name));
-	    res.verified_vertex_2_[count].position.push_back(rs2.getVariablePosition(joint_name));
+	    res.motion_edges[count].verified_vertex_1_.name.push_back(joint_name);
+	    res.motion_edges[count].verified_vertex_2_.name.push_back(joint_name);
+	    res.motion_edges[count].verified_vertex_1_.position.push_back(rs1.getVariablePosition(joint_name));
+	    res.motion_edges[count].verified_vertex_2_.position.push_back(rs2.getVariablePosition(joint_name));
 	}
 	count++;
     }
