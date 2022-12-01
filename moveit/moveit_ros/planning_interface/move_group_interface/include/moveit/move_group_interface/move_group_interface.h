@@ -1017,6 +1017,12 @@ public:
   /** \brief Reset the action */
   void clearAction();
 
+  /** \brief Add experience waypoints as the hint for planning*/
+  void setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints);
+
+  /** \brief Reset experience waypoints */
+  void clearExperience();
+
   /**@}*/
 
 protected:

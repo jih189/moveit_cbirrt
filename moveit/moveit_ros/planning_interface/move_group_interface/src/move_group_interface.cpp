@@ -1135,6 +1135,11 @@ public:
       request.action_id = action_id_;
     }
 
+    if(experience_waypoints_.size() > 0) // there is a experience waypoints
+    {
+      request.experience_waypoints = experience_waypoints_;
+    }
+
     if (active_target_ == JOINT)
     {
       request.goal_constraints.resize(1);
@@ -1367,6 +1372,16 @@ public:
   {
     action_name_ = "";
     action_id_ = -1;
+  }
+
+  void setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints)
+  {
+    experience_waypoints_ = experience_waypoints;
+  }
+
+  void clearExperience()
+  {
+    experience_waypoints_.clear();
   }
 
 private:
@@ -2490,6 +2505,16 @@ void MoveGroupInterface::setActionWithId(const std::string action_name, const in
 void MoveGroupInterface::clearAction()
 {
   impl_->clearAction();
+}
+
+void MoveGroupInterface::setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints)
+{
+  impl_->setExperience(experience_waypoints);
+}
+
+void MoveGroupInterface::clearExperience()
+{
+  impl_->clearExperience();
 }
 
 }  // namespace planning_interface

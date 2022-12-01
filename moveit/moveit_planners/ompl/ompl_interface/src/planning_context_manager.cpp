@@ -569,6 +569,9 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
 
   ModelBasedPlanningContextPtr context = getPlanningContext(pc->second, factory, req, planning_scene);
 
+  // check external experience
+  std::cout << "-------------experience waypoints size = " << req.experience_waypoints.size() << std::endl;
+
   if (context)
   {
     context->clear();
