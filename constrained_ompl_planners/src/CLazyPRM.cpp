@@ -618,7 +618,7 @@ void ompl::geometric::CLazyPRM::getPlannerData(base::PlannerData &data) const
     // Adding only valid edges and all other vertices simultaneously
     foreach (const Edge e, boost::edges(g_))
     {
-        if ((edgeValidityProperty_[e] & VALIDITY_TRUE) == 0)
+        if ((edgeValidityProperty_[e] & VALIDITY_TRUE) != 0)
         {
             const Vertex v1 = boost::source(e, g_);
             const Vertex v2 = boost::target(e, g_);

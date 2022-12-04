@@ -476,18 +476,13 @@ void ompl_interface::ModelBasedPlanningContext::interpolateSolution()
 
 void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface::MotionPlanResponse& res)
 {
-    std::cout << "extract experience from planner" << std::endl;
     ompl::base::PlannerData data(ompl_simple_setup_->getSpaceInformation());
     ompl_simple_setup_->getPlannerData(data);
-    std::cout << "number of edges in the graph = " << data.numEdges() << std::endl;
+
     ompl::base::PlannerData::Graph::Type& graph = data.toBoostGraph();
     boost::property_map<ompl::base::PlannerData::Graph, boost::vertex_index_t>::type indexPro(boost::get(boost::vertex_index_t(), graph));
 
     res.motion_edges.resize(data.numEdges());
-    //res.verified_vertex_id_1_.resize(data.numEdges());
-    //res.verified_vertex_id_2_.resize(data.numEdges());
-    //res.verified_vertex_1_.resize(data.numEdges());
-    //res.verified_vertex_2_.resize(data.numEdges());
 
     moveit::core::RobotState rs1 = complete_initial_robot_state_;
     moveit::core::RobotState rs2 = complete_initial_robot_state_;

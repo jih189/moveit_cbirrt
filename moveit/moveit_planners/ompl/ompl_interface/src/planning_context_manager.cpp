@@ -560,13 +560,6 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
 	factory = getStateSpaceFactory(pc->second.group, req);
   }
   
-  //auto it = pc->second.config.find("enforce_joint_model_state_space");
-
-  //if (it != pc->second.config.end() && boost::lexical_cast<bool>(it->second))
-  //  factory = getStateSpaceFactory(JointModelStateSpace::PARAMETERIZATION_TYPE);
-  //else
-  //  factory = getStateSpaceFactory(pc->second.group, req);
-
   ModelBasedPlanningContextPtr context = getPlanningContext(pc->second, factory, req, planning_scene);
 
   // check external experience
