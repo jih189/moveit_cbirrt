@@ -400,6 +400,9 @@ protected:
   /// the OMPL planning context; this contains the problem definition and the planner used
   og::SimpleSetupPtr ompl_simple_setup_;
 
+  /// the OMPL planner data
+  ompl::base::PlannerDataPtr ompl_planner_data_;
+
   /// the OMPL tool for benchmarking planners
   ot::Benchmark ompl_benchmark_;
 

@@ -71,6 +71,7 @@
 #include "ompl/base/objectives/StateCostIntegralObjective.h"
 #include "ompl/base/objectives/MaximizeMinClearanceObjective.h"
 #include <ompl/geometric/planners/prm/LazyPRM.h>
+#include <constrained_ompl_planners/CLazyPRM.h>
 
 #include <ompl/base/PlannerData.h>
 #include <ompl/base/PlannerDataGraph.h>
@@ -109,6 +110,7 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   complete_initial_robot_state_.update();
 
   constraints_library_ = std::make_shared<ConstraintsLibrary>(this);
+  ompl_planner_data_ =  std::make_shared<ompl::base::PlannerData>(ompl_simple_setup_->getSpaceInformation());
 }
 
 void ompl_interface::ModelBasedPlanningContext::configure(const ros::NodeHandle& nh, bool use_constraints_approximations)
@@ -153,7 +155,9 @@ void ompl_interface::ModelBasedPlanningContext::configure(const ros::NodeHandle&
 
   useConfig();
   if (ompl_simple_setup_->getGoal())
+  {
     ompl_simple_setup_->setup();
+  }
 }
 
 void ompl_interface::ModelBasedPlanningContext::setProjectionEvaluator(const std::string& peval)
@@ -492,28 +496,28 @@ void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface
     int count = 0;
     foreach (const boost::graph_traits<ompl::base::PlannerData::Graph>::edge_descriptor e, boost::edges(graph))
     {
-        // get the edge points states
-        const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v1 = boost::source(e, graph);
-        const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v2 = boost::target(e, graph);
-	const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
-	const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
-	// get the state id of edge points
-        res.motion_edges[count].verified_vertex_id_1_ = indexPro[v1];
-        res.motion_edges[count].verified_vertex_id_2_ = indexPro[v2];
+      // get the edge points states
+      const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v1 = boost::source(e, graph);
+      const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v2 = boost::target(e, graph);
+      const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
+      const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
+      // get the state id of edge points
+            res.motion_edges[count].verified_vertex_id_1_ = indexPro[v1];
+            res.motion_edges[count].verified_vertex_id_2_ = indexPro[v2];
 
-	// convert the ompl state to moveit robot state
-	spec_.state_space_->copyToRobotState(rs1, st1);
-	spec_.state_space_->copyToRobotState(rs2, st2);
+      // convert the ompl state to moveit robot state
+      spec_.state_space_->copyToRobotState(rs1, st1);
+      spec_.state_space_->copyToRobotState(rs2, st2);
 
-	// set the joint names with their values
-	for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
-	{
-	    res.motion_edges[count].verified_vertex_1_.name.push_back(joint_name);
-	    res.motion_edges[count].verified_vertex_2_.name.push_back(joint_name);
-	    res.motion_edges[count].verified_vertex_1_.position.push_back(rs1.getVariablePosition(joint_name));
-	    res.motion_edges[count].verified_vertex_2_.position.push_back(rs2.getVariablePosition(joint_name));
-	}
-	count++;
+      // set the joint names with their values
+      for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
+      {
+          res.motion_edges[count].verified_vertex_1_.name.push_back(joint_name);
+          res.motion_edges[count].verified_vertex_2_.name.push_back(joint_name);
+          res.motion_edges[count].verified_vertex_1_.position.push_back(rs1.getVariablePosition(joint_name));
+          res.motion_edges[count].verified_vertex_2_.position.push_back(rs2.getVariablePosition(joint_name));
+      }
+      count++;
     }
 }
 
@@ -745,10 +749,35 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   // clear previously computed solutions
   ompl_simple_setup_->getProblemDefinition()->clearSolutionPaths();
   const ob::PlannerPtr planner = ompl_simple_setup_->getPlanner();
-  if (planner && !multi_query_planning_enabled_)
+  if (planner) // && !multi_query_planning_enabled_)
+  {
     planner->clear();
+  }
+    
   startSampling();
   ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->resetMotionCounter();
+
+  // need to load the planner and the add the experience waypoint to the planner if there is.
+  if(multi_query_planning_enabled_)
+  {
+    if(ompl_planner_data_->numVertices() > 0) // if there is planner data, we need to load it to the planner
+      planner->as<ompl::geometric::CLazyPRM>()->loadPlannerGraph(*ompl_planner_data_);
+
+
+    // if(include_experience_)
+
+    //todo debug
+    // std::cout << "size of incomming experience waypoints: " << request_.experience_waypoints.size() << std::endl;
+    // for(unsigned int i = 0; i < request_.experience_waypoints.size(); i++)
+    // {
+    //   planner->as<ompl::geometric::CLazyPRM>()->addExperienceWaypoint(std::vector<double>{request_.experience_waypoints[i].positions[0],request_.experience_waypoints[i].positions[1],request_.experience_waypoints[i].positions[2],
+    //                                                      request_.experience_waypoints[i].positions[3],request_.experience_waypoints[i].positions[4],request_.experience_waypoints[i].positions[5],
+    //                                                      request_.experience_waypoints[i].positions[6]});
+    // }
+
+    // after load the planner data, we should clear the planner data.
+    ompl_planner_data_->clear();
+  }
 }
 
 void ompl_interface::ModelBasedPlanningContext::postSolve()
@@ -760,6 +789,13 @@ void ompl_interface::ModelBasedPlanningContext::postSolve()
 
   if (ompl_simple_setup_->getProblemDefinition()->hasApproximateSolution())
     ROS_WARN_NAMED(LOGNAME, "Computed solution is approximate");
+
+  // jiaming hu
+  // for multi-query planning, we need to save the datastructure graph to a file.
+  if(multi_query_planning_enabled_)
+  {
+    ompl_simple_setup_->getPlannerData(*ompl_planner_data_);
+  }
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
@@ -776,11 +812,11 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
     if (interpolate_)
       interpolateSolution();
 
-    // include some experience into the response
-    if (include_experience_)
-    {
-       getExperience(res);
-    }
+    // // include some experience into the response
+    // if (include_experience_)
+    // {
+    //    getExperience(res);
+    // }
 
     // fill the response
     ROS_DEBUG_NAMED(LOGNAME, "%s: Returning successful solution with %lu states", getName().c_str(),
@@ -856,8 +892,10 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
 
 bool ompl_interface::ModelBasedPlanningContext::solve(double timeout, unsigned int count)
 {
+
   moveit::tools::Profiler::ScopedBlock sblock("PlanningContext:Solve");
   ompl::time::point start = ompl::time::now();
+
   preSolve();
 
   bool result = false;

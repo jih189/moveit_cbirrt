@@ -180,6 +180,14 @@ void ompl::geometric::CLazyPRM::setRange(double distance)
         setup();
 }
 
+void ompl::geometric::CLazyPRM::addExperienceWaypoint(std::vector<double> waypoint)
+{
+    base::State* workState = si_->allocState();
+    si_->getStateSpace()->copyFromReals(workState, waypoint);
+
+    addMilestone(workState);
+}
+
 void ompl::geometric::CLazyPRM::setMaxNearestNeighbors(unsigned int k)
 {
     if (starStrategy_)
@@ -260,13 +268,25 @@ ompl::geometric::CLazyPRM::Vertex ompl::geometric::CLazyPRM::addMilestone(base::
 {
     Vertex m = boost::add_vertex(g_);
     stateProperty_[m] = state;
+    
+    // Which milestones will we attempt to connect to?
+    const std::vector<Vertex> &neighbors = connectionStrategy_(m);
+    foreach (Vertex n, neighbors)
+        if (connectionFilter_(m, n))
+        {
+            if(opt_->motionCost(stateProperty_[m], stateProperty_[n]).value() == 0.0) // if there is a duplicate, remove the new one and return the old one.
+            {
+                boost::remove_vertex(m, g_);
+                return n;
+            }
+        }
+
+
     vertexValidityProperty_[m] = VALIDITY_UNKNOWN;
     unsigned long int newComponent = componentCount_++;
     vertexComponentProperty_[m] = newComponent;
     componentSize_[newComponent] = 1;
 
-    // Which milestones will we attempt to connect to?
-    const std::vector<Vertex> &neighbors = connectionStrategy_(m);
     foreach (Vertex n, neighbors)
         if (connectionFilter_(m, n))
         {
@@ -285,6 +305,7 @@ ompl::geometric::CLazyPRM::Vertex ompl::geometric::CLazyPRM::addMilestone(base::
 ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTerminationCondition &ptc)
 {
     checkValidity();
+    
     auto *goal = dynamic_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
 
     if (goal == nullptr)
@@ -295,7 +316,9 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
 
     // Add the valid start states as milestones
     while (const base::State *st = pis_.nextStart())
+    {
         startM_.push_back(addMilestone(si_->cloneState(st)));
+    }
 
     if (startM_.empty())
     {
@@ -309,6 +332,7 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
         return base::PlannerStatus::INVALID_GOAL;
     }
 
+    // time::point addgoalstart = time::now(); // the add goal should be replaced later.
 
     // Ensure there is at least one valid goal state
     if (goal->maxSampleCount() > goalM_.size() || goalM_.empty())
@@ -323,6 +347,9 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
             return base::PlannerStatus::INVALID_GOAL;
         }
     }
+    
+    // time::point addgoalend = time::now();
+    // std::cout << "-------------------------------------Time to add goal states: " << time::seconds(addgoalend - addgoalstart) << std::endl;
 
     unsigned long int nrStartStates = boost::num_vertices(g_);
     OMPL_INFORM("%s: Starting planning with %lu states already in datastructure", getName().c_str(), nrStartStates);
@@ -335,18 +362,15 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
     bool someSolutionFound = false;
     unsigned int optimizingComponentSegments = 0;
 
+    time::point start = time::now();
+
     // Grow roadmap in lazy fashion -- add edges without checking validity
     while (!ptc)
     {
         sampler_->sampleUniform(workState);
-	// if the sampled point is not valid, then continue.
-	if(not si_->isValid(workState))
-		continue;
-
-	// [jiaming hu] add goal state into goalM_ if there are new goal
-        const base::State *newGoal = pis_.nextGoal();
-        if (newGoal != nullptr)
-            goalM_.push_back(addMilestone(si_->cloneState(newGoal)));
+        // if the sampled point is not valid, then continue.
+        if(not si_->isValid(workState))
+            continue;
 
         ++iterations_;
 	
@@ -394,8 +418,15 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
                 }
             }
         }
-    }
 
+        // [jiaming hu] add goal state into goalM_ if there are new goal
+        // const base::State *newGoal = pis_.nextGoal();
+        // if (newGoal != nullptr)
+        //     goalM_.push_back(addMilestone(si_->cloneState(newGoal)));
+    }
+    
+    time::point end = time::now();
+    std::cout << "----------------------------------------actual planning time: " << time::seconds(end - start) << "------------------------------" << std::endl;
 
     si_->freeState(workState);
 
@@ -573,9 +604,10 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
         unsigned int &evd = edgeValidityProperty_[e];
         if ((evd & VALIDITY_TRUE) == 0)
         {
+            
             if (si_->checkMotion(*state, *prevState)){
                 evd |= VALIDITY_TRUE;
-	    }
+            }
         }
         if ((evd & VALIDITY_TRUE) == 0)
         {
@@ -590,7 +622,6 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
         prevVertex = pos;
         pos = prev[pos];
     } while (prevVertex != pos);
-
 
     auto p(std::make_shared<PathGeometric>(si_));
     for (std::vector<const base::State *>::const_reverse_iterator st = states.rbegin(); st != states.rend(); ++st)
@@ -607,29 +638,89 @@ void ompl::geometric::CLazyPRM::getPlannerData(base::PlannerData &data) const
 {
     Planner::getPlannerData(data);
 
-    // Explicitly add start and goal states. Tag all states known to be valid as 1.
-    // Unchecked states are tagged as 0.
-    for (auto i : startM_)
-        data.addStartVertex(base::PlannerDataVertex(stateProperty_[i], 1));
+    // generate a list of states
+    std::vector<const base::State *> savedStates(num_vertices(g_));
 
-    for (auto i : goalM_)
-        data.addGoalVertex(base::PlannerDataVertex(stateProperty_[i], 1));
+    unsigned long int index = 0;
+    boost::graph_traits<Graph>::vertex_iterator vi, vend;
+    for (boost::tie(vi, vend) = boost::vertices(g_); vi != vend; ++vi, ++index)
+    {
+        indexProperty_[*vi] = index;
+        savedStates[index] = si_->cloneState(stateProperty_[*vi]);
+    }
 
     // Adding only valid edges and all other vertices simultaneously
     foreach (const Edge e, boost::edges(g_))
     {
-        if ((edgeValidityProperty_[e] & VALIDITY_TRUE) != 0)
+
+        const Vertex v1 = boost::source(e, g_);
+        const Vertex v2 = boost::target(e, g_);
+
+        // need to find the cost of the edge
+        double weight = weightProperty_[e].value();
+
+        // If the edge is invalid, we need to negate the weight
+        if ((edgeValidityProperty_[e] & VALIDITY_TRUE) == 0)
         {
-            const Vertex v1 = boost::source(e, g_);
-            const Vertex v2 = boost::target(e, g_);
-            data.addEdge(base::PlannerDataVertex(stateProperty_[v1]), base::PlannerDataVertex(stateProperty_[v2]));
+            weight *= -1;
+        }
 
-            // Add the reverse edge, since we're constructing an undirected roadmap
-            data.addEdge(base::PlannerDataVertex(stateProperty_[v2]), base::PlannerDataVertex(stateProperty_[v1]));
+        data.addEdge(base::PlannerDataVertex(savedStates[indexProperty_[v1]]), base::PlannerDataVertex(savedStates[indexProperty_[v2]]), base::PlannerDataEdge(), base::Cost(weight));
 
-            // Add tags for the newly added vertices
-            data.tagState(stateProperty_[v1], (vertexValidityProperty_[v1] & VALIDITY_TRUE) == 0 ? 0 : 1);
-            data.tagState(stateProperty_[v2], (vertexValidityProperty_[v2] & VALIDITY_TRUE) == 0 ? 0 : 1);
-	}
+        // Add the reverse edge, since we're constructing an undirected roadmap
+        data.addEdge(base::PlannerDataVertex(savedStates[indexProperty_[v2]]), base::PlannerDataVertex(savedStates[indexProperty_[v1]]), base::PlannerDataEdge(), base::Cost(weight));
+
+        // Add tags for the newly added vertices
+        data.tagState(savedStates[indexProperty_[v1]], (vertexValidityProperty_[v1] & VALIDITY_TRUE) == 0 ? 0 : 1);
+        data.tagState(savedStates[indexProperty_[v2]], (vertexValidityProperty_[v2] & VALIDITY_TRUE) == 0 ? 0 : 1);
     }
+}
+
+void ompl::geometric::CLazyPRM::loadPlannerGraph(base::PlannerData &data)
+{
+    if (data.numVertices() > 0)
+    {
+        // mapping between vertex id from PlannerData and Vertex in Boost.Graph
+        std::map<unsigned int, Vertex> vertices;
+        // helper function to create vertices as needed and update the vertices mapping
+        const auto &getOrCreateVertex = [&](unsigned int vertex_index) {
+            if (!vertices.count(vertex_index))
+            {
+                const auto &data_vertex = data.getVertex(vertex_index);
+                Vertex graph_vertex = boost::add_vertex(g_);
+                stateProperty_[graph_vertex] = si_->cloneState(data_vertex.getState());
+                vertexValidityProperty_[graph_vertex] = data_vertex.getTag() == 0 ? VALIDITY_UNKNOWN : VALIDITY_TRUE;
+                unsigned long int newComponent = componentCount_++;
+                vertexComponentProperty_[graph_vertex] = newComponent;
+                vertices[vertex_index] = graph_vertex;
+            }
+            return vertices.at(vertex_index);
+        };
+
+        specs_.multithreaded = false;  // temporarily set to false since nn_ is used only in single thread
+        nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Vertex>(this));
+        specs_.multithreaded = true;
+        nn_->setDistanceFunction([this](const Vertex a, const Vertex b) { return distanceFunction(a, b);});
+
+        for (size_t vertex_index = 0; vertex_index < data.numVertices(); ++vertex_index)
+        {
+            Vertex m = getOrCreateVertex(vertex_index);
+            std::vector<unsigned int> neighbor_indices;
+            data.getEdges(vertex_index, neighbor_indices);
+            for (const unsigned int neighbor_index : neighbor_indices)
+            {
+                Vertex n = getOrCreateVertex(neighbor_index);
+                base::Cost weight;
+                data.getEdgeWeight(vertex_index, neighbor_index, &weight);
+                const Graph::edge_property_type properties(base::Cost(abs(weight.value())));
+                const Edge &edge = boost::add_edge(m, n, properties, g_).first;
+                edgeValidityProperty_[edge] = weight.value() >= 0 ? VALIDITY_TRUE: VALIDITY_UNKNOWN;
+                uniteComponents(m, n);
+            }
+            nn_->add(m);
+        }
+    }
+
+    setDefaultConnectionStrategy();
+
 }
