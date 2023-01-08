@@ -2492,6 +2492,11 @@ void MoveGroupInterface::setInHandPose(const geometry_msgs::Pose& in_hand_pose)
   impl_->setInHandPose(in_hand_pose);
 }
 
+void MoveGroupInterface::clearInHandPose()
+{
+  impl_->setInHandPose(0.0,0.0,0.0,0.0,0.0,0.0,1.0);
+}
+
 const geometry_msgs::Pose& MoveGroupInterface::getInHandPose() const
 {
   return impl_->getInHandPose();

@@ -1008,6 +1008,8 @@ public:
   /** \brief Set the in hand pose for planning */
   void setInHandPose(const geometry_msgs::Pose& in_hand_pose);
 
+  void clearInHandPose();
+
   /** \brief Get the in hand pose for planning */
   const geometry_msgs::Pose& getInHandPose() const;
 
