@@ -10,6 +10,8 @@
 #include <boost/foreach.hpp>
 #include <queue>
 
+#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>// remove later
+
 #include <ompl/base/goals/GoalStates.h>
 
 #include "constrained_ompl_planners/CLazyPRM.h"
@@ -367,11 +369,11 @@ ompl::base::PlannerStatus ompl::geometric::CLazyPRM::solve(const base::PlannerTe
     // Grow roadmap in lazy fashion -- add edges without checking validity
     while (!ptc)
     {
-        sampler_->sampleUniform(workState);
+        sampler_->sampleUniform(workState); // need to check the number of constraints on the sampler
         // if the sampled point is not valid, then continue.
         if(not si_->isValid(workState))
             continue;
-
+    
         ++iterations_;
 	
         Vertex addedVertex = addMilestone(si_->cloneState(workState));
@@ -604,7 +606,6 @@ ompl::base::PathPtr ompl::geometric::CLazyPRM::constructSolution(const Vertex &s
         unsigned int &evd = edgeValidityProperty_[e];
         if ((evd & VALIDITY_TRUE) == 0)
         {
-            
             if (si_->checkMotion(*state, *prevState)){
                 evd |= VALIDITY_TRUE;
             }

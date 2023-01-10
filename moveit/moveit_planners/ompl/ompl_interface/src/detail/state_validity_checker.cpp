@@ -261,6 +261,7 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
 bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* wrapped_state, double& dist,
                                                       bool verbose) const
 {
+  verbose = true;
   dist = 100;
   assert(wrapped_state != nullptr);
   // Unwrap the state from a ConstrainedStateSpace::StateType

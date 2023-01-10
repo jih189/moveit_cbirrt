@@ -181,7 +181,7 @@ Eigen::Isometry3d BaseConstraint::forwardKinematics(const Eigen::Ref<const Eigen
   {
     std::cout << joint_name << ": " << *(robot_state->getJointPositions(joint_name)) << std::endl;
   }
-
+  
   Eigen::Isometry3d checkmatrix = robot_state->getGlobalLinkTransform(link_name_) * in_hand_pose_;
   std::cout << "pose in forward" << std::endl;
   std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
@@ -262,7 +262,7 @@ void BoxConstraint::parseConstraintMsg(const moveit_msgs::Constraints& constrain
 
 Eigen::VectorXd BoxConstraint::calcError(const Eigen::Ref<const Eigen::VectorXd>& x) const
 {
-  return target_orientation_.matrix().transpose() * (forwardKinematics(x).translation() - target_position_);
+  return -1 * target_orientation_.matrix().transpose() * (forwardKinematics(x).translation() - target_position_);
 }
 
 Eigen::MatrixXd BoxConstraint::calcErrorJacobian(const Eigen::Ref<const Eigen::VectorXd>& x) const
@@ -290,9 +290,9 @@ void EqualityPositionConstraint::parseConstraintMsg(const moveit_msgs::Constrain
     {
       if (dims.at(i) < getTolerance())
       {
-	ROS_ERROR_NAMED(
-		LOGNAME, 
-		"Dimension: '%s' of position constraint is smaller than the tolerance used to evaluate the constraints. This will make all states invalid and planning will fail. Please use a value between: '%s' and '%s'", i, getTolerance(), EQUALITY_CONSTRAINT_THRESHOLD);
+        ROS_ERROR_NAMED(
+          LOGNAME, 
+          "Dimension: '%s' of position constraint is smaller than the tolerance used to evaluate the constraints. This will make all states invalid and planning will fail. Please use a value between: '%s' and '%s'", i, getTolerance(), EQUALITY_CONSTRAINT_THRESHOLD);
       }
 
       is_dim_constrained_.at(i) = true;
@@ -315,8 +315,8 @@ void EqualityPositionConstraint::function(const Eigen::Ref<const Eigen::VectorXd
                                           Eigen::Ref<Eigen::VectorXd> out) const
 {
   Eigen::Vector3d error =
-      target_orientation_.matrix().transpose() * (forwardKinematics(joint_values).translation() - target_position_);
-  
+      -1 * target_orientation_.matrix().transpose() * (forwardKinematics(joint_values).translation() - target_position_); // TODO: here may be wrong in MOVEIT code.
+
   for (std::size_t dim = 0; dim < 3; ++dim)
   {
     if (is_dim_constrained_.at(dim))

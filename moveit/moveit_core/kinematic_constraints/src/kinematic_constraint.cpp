@@ -479,15 +479,36 @@ bool PositionConstraint::equal(const KinematicConstraint& other, double margin) 
   return false;
 }
 
+// // helper function to avoid code duplication
+// static inline ConstraintEvaluationResult finishPositionConstraintDecision(const Eigen::Vector3d& pt,
+//                                                                           const Eigen::Vector3d& desired,
+//                                                                           const std::string& name, double weight,
+//                                                                           bool result, bool verbose)
+// {
+//   double dx = desired.x() - pt.x();
+//   double dy = desired.y() - pt.y();
+//   double dz = desired.z() - pt.z();
+//   if (verbose)
+//   {
+//     ROS_INFO_NAMED("kinematic_constraints",
+//                    "Position constraint %s on link '%s'. Desired: %f, %f, %f, current: %f, %f, %f",
+//                    result ? "satisfied" : "violated", name.c_str(), desired.x(), desired.y(), desired.z(), pt.x(),
+//                    pt.y(), pt.z());
+//     ROS_INFO_NAMED("kinematic_constraints", "Differences %g %g %g", dx, dy, dz);
+//   }
+//   return ConstraintEvaluationResult(result, weight * sqrt(dx * dx + dy * dy + dz * dz));
+// }
+
 // helper function to avoid code duplication
-static inline ConstraintEvaluationResult finishPositionConstraintDecision(const Eigen::Vector3d& pt,
+static inline ConstraintEvaluationResult finishPositionConstraintDecision(const Eigen::Vector3d& errorInDesiredFrame,
+                                                                          const Eigen::Vector3d& pt,
                                                                           const Eigen::Vector3d& desired,
                                                                           const std::string& name, double weight,
                                                                           bool result, bool verbose)
 {
-  double dx = desired.x() - pt.x();
-  double dy = desired.y() - pt.y();
-  double dz = desired.z() - pt.z();
+  double dx = errorInDesiredFrame.x();
+  double dy = errorInDesiredFrame.y();
+  double dz = errorInDesiredFrame.z();
   if (verbose)
   {
     ROS_INFO_NAMED("kinematic_constraints",
@@ -513,12 +534,12 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
 	  //{
 	  //  std::cout << joint_name << ": " << *(state.getJointPositions(joint_name)) << std::endl;
 	  //}
-          //Eigen::Isometry3d checkmatrix = state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
-	  //std::cout << "object pose" << std::endl;
-	  //std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
-	  //std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
-	  //std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
-	  //std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
+    Eigen::Isometry3d checkmatrix = state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
+	  std::cout << "object pose" << std::endl;
+	  std::cout << checkmatrix(0,0) << " " << checkmatrix(0,1) << " " << checkmatrix(0,2) << " " << checkmatrix(0,3) << std::endl;
+	  std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
+	  std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
+	  std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
   }
   if (mobile_frame_)
   {
@@ -526,13 +547,28 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
     {
       Eigen::Isometry3d tmp = state.getFrameTransform(constraint_frame_id_) * constraint_region_pose_[i];
       bool result = constraint_region_[i]->cloneAt(tmp)->containsPoint(pt, verbose);
+      if(verbose)
+      {
+        std::cout << "dimensions" << std::endl;
+        std::cout << constraint_region_[i]->getDimensions()[0] << " " << constraint_region_[i]->getDimensions()[1] << " " << constraint_region_[i]->getDimensions()[2] << std::endl;
+        std::cout << "reference pose" << std::endl;
+        std::cout << tmp(0,0) << " " << tmp(0,1) << " " << tmp(0,2) << " " << tmp(0,3) << std::endl;
+        std::cout << tmp(1,0) << " " << tmp(1,1) << " " << tmp(1,2) << " " << tmp(1,3) << std::endl;
+        std::cout << tmp(2,0) << " " << tmp(2,1) << " " << tmp(2,2) << " " << tmp(2,3) << std::endl;
+        std::cout << tmp(3,0) << " " << tmp(3,1) << " " << tmp(3,2) << " " << tmp(3,3) << std::endl;
+        std::cout << "result: " << result << "------------------------------------------------------------" << std::endl;
+      }
+      Eigen::Isometry3d errorInDesiredFrame = tmp.inverse() * state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
       if (result || (i + 1 == constraint_region_pose_.size())){
-        return finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_,
-                                                result, verbose);
+        // return finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_, result, verbose);
+        return finishPositionConstraintDecision(errorInDesiredFrame.translation(), pt, tmp.translation(), link_model_->getName(), constraint_weight_, result, verbose);
       }
       else
-        finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_, result,
-                                         verbose);
+      {
+        // finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_, result, verbose);
+        finishPositionConstraintDecision(errorInDesiredFrame.translation(), pt, tmp.translation(), link_model_->getName(), constraint_weight_, result, verbose);
+      }
+        
     }
   }
   else
@@ -540,13 +576,16 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
     for (std::size_t i = 0; i < constraint_region_.size(); ++i)
     {
       bool result = constraint_region_[i]->containsPoint(pt, true);
+      Eigen::Isometry3d errorInDesiredFrame = constraint_region_[i]->getPose().inverse() * state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
       if (result || (i + 1 == constraint_region_.size())){
-        return finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(),
-                                                link_model_->getName(), constraint_weight_, result, verbose);
+        // return finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(), link_model_->getName(), constraint_weight_, result, verbose);
+        return finishPositionConstraintDecision(errorInDesiredFrame.translation(), pt, constraint_region_[i]->getPose().translation(), link_model_->getName(), constraint_weight_, result, verbose);
       }
       else
-        finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(), link_model_->getName(),
-                                         constraint_weight_, result, verbose);
+      {
+        // finishPositionConstraintDecision(pt, constraint_region_[i]->getPose().translation(), link_model_->getName(), constraint_weight_, result, verbose);
+        finishPositionConstraintDecision(errorInDesiredFrame.translation(), pt, constraint_region_[i]->getPose().translation(), link_model_->getName(), constraint_weight_, result, verbose);
+      }
     }
   }
   return ConstraintEvaluationResult(false, 0.0);

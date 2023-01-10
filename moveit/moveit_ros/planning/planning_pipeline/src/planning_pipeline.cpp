@@ -262,6 +262,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
   {
     std::size_t state_count = res.trajectory_->getWayPointCount();
     ROS_DEBUG_STREAM("Motion planner reported a solution path with " << state_count << " states");
+    
     if (check_solution_paths_)
     {
       visualization_msgs::MarkerArray arr;

@@ -110,7 +110,7 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   complete_initial_robot_state_.update();
 
   constraints_library_ = std::make_shared<ConstraintsLibrary>(this);
-  ompl_planner_data_ =  std::make_shared<ompl::base::PlannerData>(ompl_simple_setup_->getSpaceInformation());
+  // ompl_planner_data_ =  std::make_shared<ompl::base::PlannerData>(ompl_simple_setup_->getSpaceInformation());
 }
 
 void ompl_interface::ModelBasedPlanningContext::configure(const ros::NodeHandle& nh, bool use_constraints_approximations)
@@ -749,7 +749,7 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   // clear previously computed solutions
   ompl_simple_setup_->getProblemDefinition()->clearSolutionPaths();
   const ob::PlannerPtr planner = ompl_simple_setup_->getPlanner();
-  if (planner) // && !multi_query_planning_enabled_)
+  if (planner && !multi_query_planning_enabled_)
   {
     planner->clear();
   }
@@ -758,26 +758,26 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->resetMotionCounter();
 
   // need to load the planner and the add the experience waypoint to the planner if there is.
-  if(multi_query_planning_enabled_)
-  {
-    if(ompl_planner_data_->numVertices() > 0) // if there is planner data, we need to load it to the planner
-      planner->as<ompl::geometric::CLazyPRM>()->loadPlannerGraph(*ompl_planner_data_);
+  // if(multi_query_planning_enabled_)
+  // {
+  //   if(ompl_planner_data_->numVertices() > 0) // if there is planner data, we need to load it to the planner
+  //     planner->as<ompl::geometric::CLazyPRM>()->loadPlannerGraph(*ompl_planner_data_);
 
 
-    // if(include_experience_)
+  //   // if(include_experience_)
 
-    //todo debug
-    // std::cout << "size of incomming experience waypoints: " << request_.experience_waypoints.size() << std::endl;
-    // for(unsigned int i = 0; i < request_.experience_waypoints.size(); i++)
-    // {
-    //   planner->as<ompl::geometric::CLazyPRM>()->addExperienceWaypoint(std::vector<double>{request_.experience_waypoints[i].positions[0],request_.experience_waypoints[i].positions[1],request_.experience_waypoints[i].positions[2],
-    //                                                      request_.experience_waypoints[i].positions[3],request_.experience_waypoints[i].positions[4],request_.experience_waypoints[i].positions[5],
-    //                                                      request_.experience_waypoints[i].positions[6]});
-    // }
+  //   //todo debug
+  //   // std::cout << "size of incomming experience waypoints: " << request_.experience_waypoints.size() << std::endl;
+  //   // for(unsigned int i = 0; i < request_.experience_waypoints.size(); i++)
+  //   // {
+  //   //   planner->as<ompl::geometric::CLazyPRM>()->addExperienceWaypoint(std::vector<double>{request_.experience_waypoints[i].positions[0],request_.experience_waypoints[i].positions[1],request_.experience_waypoints[i].positions[2],
+  //   //                                                      request_.experience_waypoints[i].positions[3],request_.experience_waypoints[i].positions[4],request_.experience_waypoints[i].positions[5],
+  //   //                                                      request_.experience_waypoints[i].positions[6]});
+  //   // }
 
-    // after load the planner data, we should clear the planner data.
-    ompl_planner_data_->clear();
-  }
+  //   // after load the planner data, we should clear the planner data.
+  //   ompl_planner_data_->clear();
+  // }
 }
 
 void ompl_interface::ModelBasedPlanningContext::postSolve()
@@ -792,10 +792,10 @@ void ompl_interface::ModelBasedPlanningContext::postSolve()
 
   // jiaming hu
   // for multi-query planning, we need to save the datastructure graph to a file.
-  if(multi_query_planning_enabled_)
-  {
-    ompl_simple_setup_->getPlannerData(*ompl_planner_data_);
-  }
+  // if(multi_query_planning_enabled_)
+  // {
+  //   ompl_simple_setup_->getPlannerData(*ompl_planner_data_);
+  // }
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)

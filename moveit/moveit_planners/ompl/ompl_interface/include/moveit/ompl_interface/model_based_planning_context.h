@@ -82,6 +82,11 @@ struct ModelBasedPlanningContextSpecification
    * ConstrainedSpaceInformation object from it).
    * */
   ob::ConstrainedStateSpacePtr constrained_state_space_;
+
+  /**
+   The action name id is used to identify the action that is being planned for.
+  */
+  std::string action_name_id;
 };
 
 class ModelBasedPlanningContext : public planning_interface::PlanningContext
@@ -401,7 +406,7 @@ protected:
   og::SimpleSetupPtr ompl_simple_setup_;
 
   /// the OMPL planner data
-  ompl::base::PlannerDataPtr ompl_planner_data_;
+  // ompl::base::PlannerDataPtr ompl_planner_data_;
 
   /// the OMPL tool for benchmarking planners
   ot::Benchmark ompl_benchmark_;

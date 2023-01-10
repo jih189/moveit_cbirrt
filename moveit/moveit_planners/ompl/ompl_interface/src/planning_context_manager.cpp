@@ -72,6 +72,7 @@
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 
+
 #include <moveit/ompl_interface/parameterization/joint_space/joint_model_state_space_factory.h>
 #include <moveit/ompl_interface/parameterization/joint_space/joint_model_state_space.h>
 #include <moveit/ompl_interface/parameterization/joint_space/constrained_planning_state_space_factory.h>
@@ -120,8 +121,8 @@ ompl::base::PlannerPtr ompl_interface::MultiQueryPlannerAllocator::allocatePlann
   }
   if (multi_query_planning_enabled)
   {
-    // If we already have an instance, use that one
-    auto planner_map_it = planners_.find(new_name);
+    // If we already have an instance, use that one. We use both planner name and the action name id to identify the planner here.
+    auto planner_map_it = planners_.find(new_name + spec.action_name_id);
     if (planner_map_it != planners_.end())
       return planner_map_it->second;
 
@@ -152,9 +153,9 @@ ompl::base::PlannerPtr ompl_interface::MultiQueryPlannerAllocator::allocatePlann
       cfg.erase(it);
     }
     // Store planner instance for multi-query use
-    planners_[new_name] =
+    planners_[new_name + spec.action_name_id] =
         allocatePlannerImpl<T>(si, new_name, spec, load_planner_data, store_planner_data, planner_data_path);
-    return planners_[new_name];
+    return planners_[new_name + spec.action_name_id];
   }
   else
   {
@@ -367,6 +368,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     context_spec.planner_selector_ = getPlannerSelector();
     context_spec.constraint_sampler_manager_ = constraint_sampler_manager_;
     context_spec.state_space_ = factory->getNewStateSpace(space_spec);
+    context_spec.action_name_id = action_name_id;
 
     if ( factory->getType() == ConstrainedPlanningStateSpace::PARAMETERIZATION_TYPE){
       ROS_DEBUG_NAMED(LOGNAME, "planning_context_manager: Using OMPL's constrained state space for planning.");
@@ -374,13 +376,13 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
       // Select the correct type of constraints based on the path constraints in the planning request.
       ompl::base::ConstraintPtr ompl_constraint = 
 	      createOMPLConstraints(robot_model_, config.group, req.path_constraints, planning_scene);
-
+      
       // Create a constrained state space of type "projected state space".
       // Other types are available, so we probably should add another setting to ompl_planning.yaml
       // to choose between them.
       context_spec.constrained_state_space_ =
 	      std::make_shared<ob::ProjectedStateSpace>(context_spec.state_space_, ompl_constraint);
-
+      
       // Pass the constrained state space to ompl simple setup through the creation of a
       // ConstrainedSpaceInformation object. This makes sure the state space is properly initialized.
       context_spec.ompl_simple_setup_ = std::make_shared<ompl::geometric::SimpleSetup>(
