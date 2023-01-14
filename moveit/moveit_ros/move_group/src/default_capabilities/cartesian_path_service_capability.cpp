@@ -62,7 +62,7 @@ bool isStateValid(const planning_scene::PlanningScene* planning_scene,
 namespace move_group
 {
 MoveGroupCartesianPathService::MoveGroupCartesianPathService()
-  : MoveGroupCapability("CartesianPathService"), display_computed_paths_(true)
+  : MoveGroupCapability("CartesianPathService"), display_computed_paths_(false)
 {
 }
 
