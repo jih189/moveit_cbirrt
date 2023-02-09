@@ -645,19 +645,19 @@ void ompl_interface::ModelBasedPlanningContext::clear()
 {
   if (!multi_query_planning_enabled_)
     ompl_simple_setup_->clear();
-// TODO: remove when ROS Melodic and older are no longer supported
-#if OMPL_VERSION_VALUE >= 1005000
-  else
-  {
-    // For LazyPRM and LazyPRMstar we assume that the environment *could* have changed
-    // This means that we need to reset the validity flags for every node and edge in
-    // the roadmap. For PRM and PRMstar we assume that the environment is static. If
-    // this is not the case, then multi-query planning should not be enabled.
-    auto planner = dynamic_cast<ompl::geometric::LazyPRM*>(ompl_simple_setup_->getPlanner().get());
-    if (planner != nullptr)
-      planner->clearValidity();
-  }
-#endif
+  // TODO: remove when ROS Melodic and older are no longer supported
+  #if OMPL_VERSION_VALUE >= 1005000
+    else
+    {
+      // For LazyPRM and LazyPRMstar we assume that the environment *could* have changed
+      // This means that we need to reset the validity flags for every node and edge in
+      // the roadmap. For PRM and PRMstar we assume that the environment is static. If
+      // this is not the case, then multi-query planning should not be enabled.
+      auto planner = dynamic_cast<ompl::geometric::LazyPRM*>(ompl_simple_setup_->getPlanner().get());
+      if (planner != nullptr)
+        planner->clearValidity();
+    }
+  #endif
   ompl_simple_setup_->clearStartStates();
   ompl_simple_setup_->setGoal(ob::GoalPtr());
   ompl_simple_setup_->setStateValidityChecker(ob::StateValidityCheckerPtr());

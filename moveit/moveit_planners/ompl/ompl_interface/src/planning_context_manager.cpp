@@ -323,7 +323,7 @@ void ompl_interface::PlanningContextManager::setPlannerConfigurations(
 
 ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextManager::getPlanningContext(
     const planning_interface::PlannerConfigurationSettings& config, const ModelBasedStateSpaceFactoryPtr& factory, 
-    const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene) const
+    const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene)// const
 {
   std::cout << "--------------------check planner setting-----------------------" << std::endl;
   std::cout << "planner name: " << config.name << " with " << factory->getType() << std::endl;
@@ -336,10 +336,25 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
   std::string action_name_id = "[" + req.action_name + "][" + std::to_string(req.action_id) + "]";
   std::cout << "current action with its id: " << action_name_id << std::endl;
 
+  if(req.cleanPlanningContext)
+  {
+    std::unique_lock<std::mutex> slock(cached_contexts_->lock_);
+    std::cout << "need to clean planning context cache" << std::endl;
+    std::cout << "number of contexts before cleaning: " << cached_contexts_->contexts_.size() << std::endl;
+    for(auto it = cached_contexts_->contexts_.begin(); it != cached_contexts_->contexts_.end(); ++it)
+    {
+      std::cout << "context name: " << it->first.first << " with " << it->first.second << std::endl;
+    }
+    // delete all planning contexts and relatived planners
+    planner_allocator_.deletePlanners();
+    cached_contexts_->contexts_.clear();
+  }
+  else
+    std::cout << "no need to clean planning context cache" << std::endl;
+
   std::cout << "----------------------------------------------------------------" << std::endl;
   // Check for a cached planning context
   ModelBasedPlanningContextPtr context;
-
   {
     std::unique_lock<std::mutex> slock(cached_contexts_->lock_);
     //auto cached_contexts = cached_contexts_->contexts_.find(std::make_pair(config.name, factory->getType()));
@@ -461,7 +476,7 @@ ompl_interface::PlanningContextManager::getStateSpaceFactory(const std::string& 
 
 ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextManager::getPlanningContext(
     const planning_scene::PlanningSceneConstPtr& planning_scene, const moveit_msgs::MotionPlanRequest& req,
-    moveit_msgs::MoveItErrorCodes& error_code, const ros::NodeHandle& nh, bool use_constraints_approximation) const
+    moveit_msgs::MoveItErrorCodes& error_code, const ros::NodeHandle& nh, bool use_constraints_approximation)// const
 {
   if (req.group_name.empty())
   {

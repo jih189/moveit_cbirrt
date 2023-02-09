@@ -97,7 +97,7 @@ void ompl_interface::OMPLInterface::setPlannerConfigurations(const planning_inte
 
 ompl_interface::ModelBasedPlanningContextPtr
 ompl_interface::OMPLInterface::getPlanningContext(const planning_scene::PlanningSceneConstPtr& planning_scene,
-                                                  const planning_interface::MotionPlanRequest& req) const
+                                                  const planning_interface::MotionPlanRequest& req)// const
 {
   moveit_msgs::MoveItErrorCodes dummy;
   return getPlanningContext(planning_scene, req, dummy);
@@ -106,7 +106,7 @@ ompl_interface::OMPLInterface::getPlanningContext(const planning_scene::Planning
 ompl_interface::ModelBasedPlanningContextPtr
 ompl_interface::OMPLInterface::getPlanningContext(const planning_scene::PlanningSceneConstPtr& planning_scene,
                                                   const planning_interface::MotionPlanRequest& req,
-                                                  moveit_msgs::MoveItErrorCodes& error_code) const
+                                                  moveit_msgs::MoveItErrorCodes& error_code)// const
 {
   ModelBasedPlanningContextPtr ctx =
       context_manager_.getPlanningContext(planning_scene, req, error_code, nh_, use_constraints_approximations_);

@@ -1010,6 +1010,8 @@ public:
 
   void clearInHandPose();
 
+  void setCleanPlanningContextFlag(bool flag);
+
   /** \brief Get the in hand pose for planning */
   const geometry_msgs::Pose& getInHandPose() const;
 

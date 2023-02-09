@@ -132,6 +132,7 @@ public:
     allowed_planning_time_ = 5.0;
     num_planning_attempts_ = 1;
     setInHandPose(0.0,0.0,0.0,0.0,0.0,0.0,1.0);
+    is_cleanPlanningContext_ = false;
     clearAction();
     node_handle_.param<double>("robot_description_planning/default_velocity_scaling_factor",
                                max_velocity_scaling_factor_, 0.1);
@@ -814,6 +815,8 @@ public:
     goal.planning_options.planning_scene_diff.is_diff = true;
     goal.planning_options.planning_scene_diff.robot_state.is_diff = true;
 
+    setCleanPlanningContextFlag(false);
+
     move_action_client_->sendGoal(goal);
     if (!move_action_client_->waitForResult())
     {
@@ -1172,7 +1175,7 @@ public:
           if (active_target_ == POSITION)
             c.orientation_constraints.clear();
           request.goal_constraints[i] = kinematic_constraints::mergeConstraints(request.goal_constraints[i], c);
-	  // [jiaming]
+          // [jiaming]
           request.goal_constraints[i].in_hand_pose = in_hand_pose_;
         }
       }
@@ -1187,6 +1190,8 @@ public:
     }
     if (trajectory_constraints_)
       request.trajectory_constraints = *trajectory_constraints_;
+
+    request.cleanPlanningContext = is_cleanPlanningContext_;
   }
 
   void constructGoal(moveit_msgs::MoveGroupGoal& goal) const
@@ -1357,6 +1362,11 @@ public:
     in_hand_pose_.orientation.w = in_hand_pose.orientation.w;
   }
 
+  void setCleanPlanningContextFlag(bool flag)
+  {
+    is_cleanPlanningContext_ = flag;
+  }
+
   const geometry_msgs::Pose& getInHandPose() const
   {
     return in_hand_pose_;
@@ -1466,6 +1476,7 @@ private:
   std::string action_name_;
   int action_id_;
   std::vector<trajectory_msgs::JointTrajectoryPoint> experience_waypoints_;
+  bool is_cleanPlanningContext_;
 };
 
 MoveGroupInterface::MoveGroupInterface(const std::string& group_name, const std::shared_ptr<tf2_ros::Buffer>& tf_buffer,
@@ -2487,6 +2498,11 @@ void MoveGroupInterface::setInHandPose(const geometry_msgs::Pose& in_hand_pose)
 void MoveGroupInterface::clearInHandPose()
 {
   impl_->setInHandPose(0.0,0.0,0.0,0.0,0.0,0.0,1.0);
+}
+
+void MoveGroupInterface::setCleanPlanningContextFlag(bool flag)
+{
+  impl_->setCleanPlanningContextFlag(flag);
 }
 
 const geometry_msgs::Pose& MoveGroupInterface::getInHandPose() const

@@ -64,3 +64,6 @@ int32 action_id
 
 # experience waypoints. This is a sequence of joint configurations used to speed up planning. If you can't find any experience, then keep it empty.
 trajectory_msgs/JointTrajectoryPoint[] experience_waypoints
+
+# if this flag is set to true, then it will clean all planning context before planning.
+bool cleanPlanningContext

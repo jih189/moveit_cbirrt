@@ -80,10 +80,10 @@ public:
   }
 
   ModelBasedPlanningContextPtr getPlanningContext(const planning_scene::PlanningSceneConstPtr& planning_scene,
-                                                  const planning_interface::MotionPlanRequest& req) const;
+                                                  const planning_interface::MotionPlanRequest& req);// const;
   ModelBasedPlanningContextPtr getPlanningContext(const planning_scene::PlanningSceneConstPtr& planning_scene,
                                                   const planning_interface::MotionPlanRequest& req,
-                                                  moveit_msgs::MoveItErrorCodes& error_code) const;
+                                                  moveit_msgs::MoveItErrorCodes& error_code);// const;
 
   const PlanningContextManager& getPlanningContextManager() const
   {

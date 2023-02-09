@@ -58,6 +58,20 @@ public:
   ob::PlannerPtr allocatePlanner(const ob::SpaceInformationPtr& si, const std::string& new_name,
                                  const ModelBasedPlanningContextSpecification& spec);
 
+  int getPlannerCount() const
+  {
+    return planners_.size();
+  }
+
+  void deletePlanners()
+  {
+    for(auto& planner : planners_)
+    {
+      planner.second->clear();
+    }
+    planners_.clear();
+  }
+
 private:
   template <typename T>
   ob::PlannerPtr allocatePlannerImpl(const ob::SpaceInformationPtr& si, const std::string& new_name,
@@ -181,7 +195,7 @@ public:
   ModelBasedPlanningContextPtr getPlanningContext(const planning_scene::PlanningSceneConstPtr& planning_scene,
                                                   const planning_interface::MotionPlanRequest& req,
                                                   moveit_msgs::MoveItErrorCodes& error_code, const ros::NodeHandle& nh,
-                                                  bool use_constraints_approximations) const;
+                                                  bool use_constraints_approximations);// const;
 
   void registerPlannerAllocator(const std::string& planner_id, const ConfiguredPlannerAllocator& pa)
   {
@@ -218,7 +232,7 @@ protected:
   ModelBasedPlanningContextPtr getPlanningContext(const planning_interface::PlannerConfigurationSettings& config,
                                                   const ModelBasedStateSpaceFactoryPtr& factory,
 						  const moveit_msgs::MotionPlanRequest& req,
-						  const planning_scene::PlanningSceneConstPtr& planning_scene) const;
+						  const planning_scene::PlanningSceneConstPtr& planning_scene);// const;
 
   const ModelBasedStateSpaceFactoryPtr& getStateSpaceFactory(const std::string& factory_type) const;
   const ModelBasedStateSpaceFactoryPtr& getStateSpaceFactory(const std::string& group_name,
