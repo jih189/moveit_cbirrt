@@ -858,6 +858,8 @@ public:
     goal.planning_options.planning_scene_diff.is_diff = true;
     goal.planning_options.planning_scene_diff.robot_state.is_diff = true;
 
+    setCleanPlanningContextFlag(false);
+
     move_action_client_->sendGoal(goal);
     if (!move_action_client_->waitForResult())
     {

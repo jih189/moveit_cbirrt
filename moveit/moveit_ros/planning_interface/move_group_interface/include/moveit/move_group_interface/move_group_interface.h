@@ -716,7 +716,7 @@ public:
 
   /** \brief Compute a motion plan that takes the group declared in the constructor from the current state to the
      specified
-      target. No execution is performed. The resulting plan is stored in \e plan*/
+      target. No execution is performed. The resulting plan is stored in \e plan */
   moveit::core::MoveItErrorCode plan(Plan& plan);
 
   /** \brief Compute a motion plan that takes the group declared in the constructor from the current state to the
