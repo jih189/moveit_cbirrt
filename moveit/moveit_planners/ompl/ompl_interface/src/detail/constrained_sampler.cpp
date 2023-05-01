@@ -79,7 +79,6 @@ bool ompl_interface::ConstrainedSampler::sampleC(ob::State* state)
 
 void ompl_interface::ConstrainedSampler::sampleUniform(ob::State* state)
 {
-  std::cout << "jiaming: run sampleUniform in ompl_interface::ConstrainedSampler" << std::endl;
   if (!sampleC(state) && !sampleC(state) && !sampleC(state))
     default_->sampleUniform(state);
 }

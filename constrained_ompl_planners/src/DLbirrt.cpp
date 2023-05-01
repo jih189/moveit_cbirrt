@@ -170,6 +170,29 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
         return base::PlannerStatus::UNRECOGNIZED_GOAL_TYPE;
     }
 
+    // get both start and goal configurations
+    const base::State *start_state = pis_.nextStart();
+    const base::State *goal_state = pis_.nextGoal(ptc);
+
+    // convert both start and goal state into two vectors.
+    std::vector<double> start_configuration, goal_configuration;
+    for(int i = 0; i < si_->getStateDimension(); i++)
+    {
+        start_configuration.push_back(*(si_->getStateSpace()->getValueAddressAtIndex(start_state, i)));
+        goal_configuration.push_back(*(si_->getStateSpace()->getValueAddressAtIndex(goal_state, i)));
+    }
+
+    //TODO: pass both start and goal configuration to the path planning server, so it will read the pointcloud of the
+    //      obstacles, and generate the distribution sequence back. Therefore, we can have a sampler to read this 
+    //      distribution sequence to sample state.
+
+    // std::cout << "start configuration" << std::endl;
+    // si_->printState(start_state, std::cout);
+    // std::cout << "goal configuration" << std::endl;
+    // si_->printState(goal_state, std::cout);
+
+    pis_.restart();
+
     while (const base::State *st = pis_.nextStart())
     {
         auto *motion = new Motion(si_);
@@ -204,6 +227,7 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
     auto *rmotion = new Motion(si_);
     base::State *rstate = rmotion->state;
     bool solved = false;
+
 
     while (!ptc)
     {
