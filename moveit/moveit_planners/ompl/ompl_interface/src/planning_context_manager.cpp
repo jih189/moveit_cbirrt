@@ -68,6 +68,7 @@
 #include <ompl/geometric/planners/prm/SPARStwo.h>
 #include <constrained_ompl_planners/cbirrt.h>
 #include <constrained_ompl_planners/CLazyPRM.h>
+#include <constrained_ompl_planners/DLbirrt.h>
 
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
@@ -301,6 +302,7 @@ void ompl_interface::PlanningContextManager::registerDefaultPlanners()
   registerPlannerAllocatorHelper<og::TRRT>("geometric::TRRT");
   registerPlannerAllocatorHelper<og::CBIRRT>("geometric::CBIRRT");
   registerPlannerAllocatorHelper<og::CLazyPRM>("geometric::CLazyPRM");
+  registerPlannerAllocatorHelper<og::DLBIRRT>("geometric::DLBIRRT");
 }
 
 void ompl_interface::PlanningContextManager::registerDefaultStateSpaces()
