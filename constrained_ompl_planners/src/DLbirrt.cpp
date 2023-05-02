@@ -16,6 +16,8 @@ ompl::geometric::DLBIRRT::DLBIRRT(const base::SpaceInformationPtr &si, bool addI
     connectionPoint_ = std::make_pair<base::State *, base::State *>(nullptr, nullptr);
     distanceBetweenTrees_ = std::numeric_limits<double>::infinity();
     addIntermediateStates_ = addIntermediateStates;
+    ros::NodeHandle n;
+    client_ = n.serviceClient<moveit_msgs::GetSamplingDistributionSequence>("distribution_sequence_predict");
 }
 
 ompl::geometric::DLBIRRT::~DLBIRRT()
@@ -175,12 +177,14 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
     const base::State *goal_state = pis_.nextGoal(ptc);
 
     // convert both start and goal state into two vectors.
-    std::vector<double> start_configuration, goal_configuration;
+    moveit_msgs::GetSamplingDistributionSequence srv;
     for(int i = 0; i < si_->getStateDimension(); i++)
     {
-        start_configuration.push_back(*(si_->getStateSpace()->getValueAddressAtIndex(start_state, i)));
-        goal_configuration.push_back(*(si_->getStateSpace()->getValueAddressAtIndex(goal_state, i)));
+        srv.request.start_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(start_state, i));
+        srv.request.goal_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(goal_state, i));
     }
+
+    client_.call(srv);
 
     //TODO: pass both start and goal configuration to the path planning server, so it will read the pointcloud of the
     //      obstacles, and generate the distribution sequence back. Therefore, we can have a sampler to read this 

@@ -56,6 +56,7 @@ PlanningOptions.msg
 PositionConstraint.msg
 RobotState.msg
 RobotTrajectory.msg
+SamplingDistribution.msg
 VerifiedMotion.msg
 VisibilityConstraint.msg
 WorkspaceParameters.msg
@@ -88,6 +89,7 @@ RenameRobotStateInWarehouse.srv
 DeleteRobotStateFromWarehouse.srv
 ChangeControlDimensions.srv
 ChangeDriftDimensions.srv
+GetSamplingDistributionSequence.srv
 )
 
 set(ACT_FILES

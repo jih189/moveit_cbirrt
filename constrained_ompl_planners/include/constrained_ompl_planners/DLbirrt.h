@@ -4,6 +4,9 @@
 #include "ompl/datastructures/NearestNeighbors.h"
 #include "ompl/geometric/planners/PlannerIncludes.h"
 
+#include "ros/ros.h"
+#include <moveit_msgs/GetSamplingDistributionSequence.h>
+
 namespace ompl
 {
     namespace geometric
@@ -153,6 +156,8 @@ namespace ompl
 
             /** \brief Distance between the nearest pair of start tree and goal tree nodes. */
             double distanceBetweenTrees_;
+
+            ros::ServiceClient client_;
         };
     }
 }
