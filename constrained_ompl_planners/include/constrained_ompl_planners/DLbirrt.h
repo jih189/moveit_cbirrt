@@ -3,9 +3,14 @@
 
 #include "ompl/datastructures/NearestNeighbors.h"
 #include "ompl/geometric/planners/PlannerIncludes.h"
+#include <ompl/base/spaces/RealVectorStateSpace.h>
 
 #include "ros/ros.h"
 #include <moveit_msgs/GetSamplingDistributionSequence.h>
+#include <moveit_msgs/SamplingDistribution.h>
+
+#include <Eigen/Dense>
+#include <random>
 
 namespace ompl
 {
@@ -129,6 +134,30 @@ namespace ompl
 
             /** \brief Grow a tree towards a random state */
             GrowState growTree(TreeData &tree, TreeGrowingInfo &tgi, Motion *rmotion);
+
+            struct Gaussian {
+                Eigen::VectorXd mean;
+                Eigen::MatrixXd covariance;
+            };
+
+            /** \brief Sample a joint configuration with a gaussian distribution and random generator */
+            Eigen::VectorXd sample_from_gaussian(const Gaussian& gaussian, std::mt19937& gen) {
+                Eigen::MatrixXd L = gaussian.covariance.llt().matrixL();
+
+                std::normal_distribution<> dist(0, 1);
+
+                Eigen::VectorXd z(7);
+                for (int i = 0; i < 7; ++i) {
+                    z(i) = dist(gen);
+                }
+
+                return gaussian.mean + L * z;
+            }
+
+            Eigen::VectorXd sample_from_distribution_sequence(const std::vector<Gaussian>& gaussian_distributions, std::uniform_int_distribution<> dist, std::mt19937& gen) {
+                int random_number = dist(gen);
+                return sample_from_gaussian(gaussian_distributions[random_number], gen);
+            }
 
             /** \brief State sampler */
             base::StateSamplerPtr sampler_;

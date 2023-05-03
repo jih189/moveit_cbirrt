@@ -184,11 +184,29 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
         srv.request.goal_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(goal_state, i));
     }
 
+    // call the distribution sequence prediction server
     client_.call(srv);
 
-    //TODO: pass both start and goal configuration to the path planning server, so it will read the pointcloud of the
-    //      obstacles, and generate the distribution sequence back. Therefore, we can have a sampler to read this 
-    //      distribution sequence to sample state.
+    // save the gaussian distribution sequence.
+    std::vector<Gaussian> gaussian_distributions;
+    for(moveit_msgs::SamplingDistribution s: srv.response.distribution_sequence)
+    {
+        Gaussian g;
+        g.mean = Eigen::VectorXd(7);
+        for (size_t i = 0; i < s.distribution_mean.size(); ++i)
+            g.mean(i) = s.distribution_mean[i];
+
+        g.covariance = Eigen::MatrixXd(7, 7);
+        for (size_t i = 0; i < 7; ++i)
+            for (size_t j = 0; j < 7; ++j)
+                g.covariance(i, j) = s.distribution_convariance[i * 7 + j];
+        gaussian_distributions.push_back(g);
+    }
+
+    // initialize all random generator
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(0, srv.response.distribution_sequence.size() - 1);
 
     // std::cout << "start configuration" << std::endl;
     // si_->printState(start_state, std::cout);
@@ -231,6 +249,7 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
     auto *rmotion = new Motion(si_);
     base::State *rstate = rmotion->state;
     bool solved = false;
+    int numOfSamplingAttempt = 0;
 
 
     while (!ptc)
@@ -258,8 +277,20 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
             }
         }
 
-        /* sample random state */
-        sampler_->sampleUniform(rstate);
+        if(srv.response.distribution_sequence.size() == 0)
+        {
+            /* sample random state */
+            sampler_->sampleUniform(rstate);
+        }
+        else{
+            // sample random state based on distribution sequence
+            Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions, dist, gen);
+            // set the sampling value to the rstate.
+            for(int i = 0; i < si_->getStateDimension(); i++)
+                rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
+        }
+        
+        numOfSamplingAttempt++;
 
         GrowState gs = growTree(tree, tgi, rmotion);
 
@@ -359,8 +390,14 @@ ompl::base::PlannerStatus ompl::geometric::DLBIRRT::solve(const base::PlannerTer
     si_->freeState(rstate);
     delete rmotion;
 
+    if(srv.response.distribution_sequence.size() == 0)
+        OMPL_INFORM("plan without mpt");
+    else
+        OMPL_INFORM("plan with mpt");
+
     OMPL_INFORM("%s: Created %u states (%u start + %u goal)", getName().c_str(), tStart_->size() + tGoal_->size(),
                 tStart_->size(), tGoal_->size());
+    OMPL_INFORM("%s: have sampled %u times ", getName().c_str(), numOfSamplingAttempt);
 
     if (approxsol && !solved)
     {
