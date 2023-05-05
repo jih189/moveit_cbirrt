@@ -781,3 +781,15 @@ class MoveGroupCommander(object):
         c_str = self._g.enforce_bounds(conversions.msg_to_string(robot_state_msg))
         conversions.msg_from_string(s, c_str)
         return s
+
+    def set_clean_planning_context_flag(self, flag):
+        """Set the flag to clean the planners in moveit."""
+        self._g.set_clean_planning_context_flag(flag)
+
+    def set_action_with_id(self, action_name, action_id):
+        """Set the action name and the action manifold id """
+        self._g.set_action_with_id(action_name, action_id)
+
+    def set_in_hand_pose(self, in_hand_pose):
+        """Set the object pose in hand so the object will be the new end-effector which the constraint is applied on """
+        self._g.set_in_hand_pose(in_hand_pose)

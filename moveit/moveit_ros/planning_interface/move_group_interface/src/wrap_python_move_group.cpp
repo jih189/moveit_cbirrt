@@ -653,6 +653,43 @@ public:
       return py_bindings_tools::ByteString("");
     }
   }
+
+  void setCleanPlanningContextFlagPython(bool flag)
+  {
+    setCleanPlanningContextFlag(flag);
+  }
+
+  void setActionWithIdPython(const std::string action_name, const int action_id)
+  {
+    setActionWithId(action_name, action_id);
+  }
+
+  void setInHandPosePython(bp::list& pose)
+  {
+    std::vector<double> v = py_bindings_tools::doubleFromList(pose);
+    geometry_msgs::Pose msg;
+    if (v.size() == 6)
+    {
+      tf2::Quaternion q;
+      q.setRPY(v[3], v[4], v[5]);
+      tf2::convert(q, msg.orientation);
+    }
+    else if (v.size() == 7)
+    {
+      msg.orientation.x = v[3];
+      msg.orientation.y = v[4];
+      msg.orientation.z = v[5];
+      msg.orientation.w = v[6];
+    }
+    else
+    {
+      ROS_ERROR("Pose description expected to consist of either 6 or 7 values");
+    }
+    msg.position.x = v[0];
+    msg.position.y = v[1];
+    msg.position.z = v[2];
+    setInHandPose(msg);
+  }
 };
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(getJacobianMatrixOverloads, getJacobianMatrixPython, 1, 2)
@@ -807,6 +844,11 @@ static void wrap_move_group_interface()
   move_group_interface_class.def("get_jacobian_matrix", &MoveGroupInterfaceWrapper::getJacobianMatrixPython,
                                  getJacobianMatrixOverloads());
   move_group_interface_class.def("enforce_bounds", &MoveGroupInterfaceWrapper::enforceBoundsPython);
+  move_group_interface_class.def("set_clean_planning_context_flag", &MoveGroupInterfaceWrapper::setCleanPlanningContextFlagPython);
+  move_group_interface_class.def("set_action_with_id", &MoveGroupInterfaceWrapper::setActionWithIdPython);
+  move_group_interface_class.def("set_in_hand_pose", &MoveGroupInterfaceWrapper::setInHandPosePython);
+  move_group_interface_class.def("clear_action", &MoveGroupInterfaceWrapper::clearAction);
+  move_group_interface_class.def("clear_in_hand_pose", &MoveGroupInterfaceWrapper::clearInHandPose);
 }
 }  // namespace planning_interface
 }  // namespace moveit

@@ -342,17 +342,12 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
   {
     std::unique_lock<std::mutex> slock(cached_contexts_->lock_);
     std::cout << "need to clean planning context cache" << std::endl;
-    std::cout << "number of contexts before cleaning: " << cached_contexts_->contexts_.size() << std::endl;
-    for(auto it = cached_contexts_->contexts_.begin(); it != cached_contexts_->contexts_.end(); ++it)
-    {
-      std::cout << "context name: " << it->first.first << " with " << it->first.second << std::endl;
-    }
     // delete all planning contexts and relatived planners
     planner_allocator_.deletePlanners();
     cached_contexts_->contexts_.clear();
   }
   else
-    std::cout << "no need to clean planning context cache" << std::endl;
+    std::cout << "no need to clean planning context cache. The current planning context number " << cached_contexts_->contexts_.size() << std::endl;
 
   std::cout << "----------------------------------------------------------------" << std::endl;
   // Check for a cached planning context
