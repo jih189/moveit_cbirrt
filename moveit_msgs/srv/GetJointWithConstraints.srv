@@ -1,0 +1,10 @@
+# A service call to sample a joint value satisfying given constraints 
+# The constraints 
+Constraints constraints
+uint8 max_sampling_attempt
+string group_name
+---
+
+# The returned solution
+RobotState solution
+MoveItErrorCodes error_code

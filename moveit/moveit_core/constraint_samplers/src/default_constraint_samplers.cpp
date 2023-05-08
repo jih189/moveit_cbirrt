@@ -285,13 +285,12 @@ bool IKConstraintSampler::configure(const IKSamplingPose& sp)
     return false;
   }
   is_valid_ = loadIKSolver();
-  // [jiaming]
-  //std::cout << "in IKConstraintSampler::configure" << std::endl;
-  //std::cout << "check in hand pose of the constraint" << std::endl;
-  //std::cout << sp.position_constraint_->getInHandPose().matrix() << std::endl;
-  //std::cout << "------------" << std::endl;
-  //std::cout << sp.orientation_constraint_->getInHandPose().matrix() << std::endl;
-  in_hand_pose_ = sp.position_constraint_->getInHandPose();
+
+  if(sp.position_constraint_)
+    in_hand_pose_ = sp.position_constraint_->getInHandPose();
+  else if(sp.orientation_constraint_)
+    in_hand_pose_ = sp.orientation_constraint_->getInHandPose();
+
   need_in_hand_pose_ = true;
   return is_valid_;
 }
@@ -311,7 +310,7 @@ bool IKConstraintSampler::configure(const moveit_msgs::Constraints& constr)
           pc->setInHandPose(constr.in_hand_pose);
           oc->setInHandPose(constr.in_hand_pose);
           return configure(IKSamplingPose(pc, oc));
-	}
+        }
       }
 
   for (const moveit_msgs::PositionConstraint& position_constraint : constr.position_constraints)

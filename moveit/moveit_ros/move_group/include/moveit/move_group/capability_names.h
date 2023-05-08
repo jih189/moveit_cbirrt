@@ -62,4 +62,6 @@ static const std::string APPLY_PLANNING_SCENE_SERVICE_NAME =
     "apply_planning_scene";  // name of the service that applies a given planning scene
 static const std::string CLEAR_OCTOMAP_SERVICE_NAME =
     "clear_octomap";  // name of the service that can be used to clear the octomap
+static const std::string SAMPLE_JOINT_WITH_CONSTRAINTS_NAME =
+    "sample_joint_with_constraints";  // name of the service that can be used to sample joint with constraints
 }  // namespace move_group

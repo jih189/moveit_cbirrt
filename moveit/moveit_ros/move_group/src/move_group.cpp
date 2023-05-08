@@ -66,6 +66,7 @@ static const char* DEFAULT_CAPABILITIES[] = {
    "move_group/MoveGroupGetPlanningSceneService",
    "move_group/ApplyPlanningSceneService",
    "move_group/ClearOctomapService",
+   "move_group/MoveGroupSampleJointWithConstraints",
 };
 // clang-format on
 

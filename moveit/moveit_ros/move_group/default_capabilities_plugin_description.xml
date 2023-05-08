@@ -72,4 +72,10 @@
     </description>
   </class>
 
+  <class name="move_group/MoveGroupSampleJointWithConstraints" type="move_group::MoveGroupSampleJointWithConstraints" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provide a capability that sample a robot state satisfying given constraints
+    </description>
+  </class>
+
 </library>
