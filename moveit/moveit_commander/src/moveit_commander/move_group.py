@@ -792,4 +792,4 @@ class MoveGroupCommander(object):
 
     def set_in_hand_pose(self, in_hand_pose):
         """Set the object pose in hand so the object will be the new end-effector which the constraint is applied on """
-        self._g.set_in_hand_pose(in_hand_pose)
+        self._g.set_in_hand_pose(conversions.pose_to_list(in_hand_pose))
