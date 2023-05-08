@@ -16,17 +16,17 @@ void MoveGroupSampleJointWithConstraints::initialize()
       root_node_handle_.advertiseService(SAMPLE_JOINT_WITH_CONSTRAINTS_NAME, &MoveGroupSampleJointWithConstraints::sampleJointWithConstraintsService, this);
 }
 
-namespace
-{
-bool checkSampleCollision(const planning_scene::PlanningScene* planning_scene,
-                       moveit::core::RobotState* state, const moveit::core::JointModelGroup* jmg,
-                       const double* ik_solution)
-{
-  state->setJointGroupPositions(jmg, ik_solution);
-  state->update();
-  return (!planning_scene || !planning_scene->isStateColliding(*state, jmg->getName()));
-}
-}  // namespace
+// namespace
+// {
+// bool checkSampleCollision(const planning_scene::PlanningScene* planning_scene,
+//                        moveit::core::RobotState* state, const moveit::core::JointModelGroup* jmg,
+//                        const double* ik_solution)
+// {
+//   state->setJointGroupPositions(jmg, ik_solution);
+//   state->update();
+//   return (!planning_scene || !planning_scene->isStateColliding(*state, jmg->getName()));
+// }
+// }  // namespace
 
 bool MoveGroupSampleJointWithConstraints::sampleJointWithConstraintsService(moveit_msgs::GetJointWithConstraints::Request& req,
                                                   moveit_msgs::GetJointWithConstraints::Response& res)

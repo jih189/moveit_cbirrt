@@ -87,6 +87,7 @@ add_library(${PROJECT_NAME}
 	#src/iksolvervel_project.cpp
   src/cbirrt.cpp
   src/DLbirrt.cpp
+  src/DLcbirrt.cpp
   src/CLazyPRM.cpp
   #src/dual_arm/kine_dual.cpp
   #src/dual_arm/optp_closure.cpp
