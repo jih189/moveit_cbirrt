@@ -90,6 +90,7 @@ DeleteRobotStateFromWarehouse.srv
 ChangeControlDimensions.srv
 ChangeDriftDimensions.srv
 GetSamplingDistributionSequence.srv
+GetNextStep.srv
 GetJointWithConstraints.srv
 )
 

@@ -1,0 +1,4 @@
+float64[7] start_configuration
+float64[7] goal_configuration
+---
+float64[7] next_step
