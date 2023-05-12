@@ -89,9 +89,7 @@ add_library(${PROJECT_NAME}
   src/DLbirrt.cpp
   src/DLcbirrt.cpp
   src/CLazyPRM.cpp
-  #src/dual_arm/kine_dual.cpp
-  #src/dual_arm/optp_closure.cpp
-  #src/dual_arm/pose_constraint_dual.cpp
+  src/MPNetrrt.cpp
 )
 target_link_libraries(
   ${PROJECT_NAME}
