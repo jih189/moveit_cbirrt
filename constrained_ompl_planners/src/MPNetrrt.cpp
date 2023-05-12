@@ -103,7 +103,110 @@ ompl::base::PlannerStatus ompl::geometric::MPNETRRT::solve(const base::PlannerTe
 {
     checkValidity();
 
-    return base::PlannerStatus::TIMEOUT;
+    // get start and goal configuration.
+    auto *goal = dynamic_cast<base::GoalSampleableRegion *>(pdef_->getGoal().get());
+
+    if (goal == nullptr)
+    {
+        OMPL_ERROR("%s: Unknown type of goal", getName().c_str());
+        return base::PlannerStatus::UNRECOGNIZED_GOAL_TYPE;
+    }
+
+    // get both start and goal configurations
+    const base::State *start_state = pis_.nextStart();
+    const base::State *goal_state = pis_.nextGoal(ptc);
+
+    // std::cout << "start configuration" << std::endl;
+    // si_->printState(start_state, std::cout);
+    // std::cout << "goal configuration" << std::endl;
+    // si_->printState(goal_state, std::cout);
+
+    // // convert both start and goal state into two vectors.
+    // moveit_msgs::GetNextStep srv;
+    // for(int i = 0; i < si_->getStateDimension(); i++)
+    // {
+    //     srv.request.start_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(start_state, i));
+    //     srv.request.goal_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(goal_state, i));
+    // }
+
+    pis_.restart();
+
+    // run the MPNet to generate the waypoints
+    std::vector<base::State *> waypoints;
+    waypoints.push_back(si_->cloneState(start_state));
+    waypoints.push_back(si_->cloneState(goal_state));
+
+    // send commands to mpnet for waypoints.
+
+    //TODO.
+
+    // Verification.
+
+    std::vector<base::State *> solution_path;
+    solution_path.push_back(si_->cloneState(waypoints[0]));
+
+    bool solved = true;
+
+    // verify through the waypoints
+    for(int i = 0; i < waypoints.size() - 1; i++)
+    {
+        base::State *current_state = waypoints[i];
+        base::State *next_state = waypoints[i+1];
+        if(si_->checkMotion(current_state, next_state)) 
+        {
+            solution_path.push_back(si_->cloneState(next_state));
+        }
+        else // if direct motion does not exist, then run tranditional planner.
+        {
+            // we assume the traditional planner does not find solution always here.
+            // initialize a local pdef
+            auto local_pdef(std::make_shared<ompl::base::ProblemDefinition>(si_));
+
+            // set the start and goal states
+            local_pdef->setStartAndGoalStates(current_state, next_state);
+
+            // pass the local problem def to the planner
+            traditional_planner->setProblemDefinition(local_pdef);
+
+            traditional_planner->setup();
+
+            ompl::base::PlannerStatus local_solved = traditional_planner->ompl::base::Planner::solve(1.0);
+
+            if (local_solved)
+            {
+                ompl::base::PathPtr local_path = local_pdef->getSolutionPath();
+                for(int j = 0; j < local_path->as<ompl::geometric::PathGeometric>()->getStateCount(); j++)
+                {
+                    solution_path.push_back(si_->cloneState(local_path->as<ompl::geometric::PathGeometric>()->getState(j)));
+                }
+
+                continue;
+            }
+
+            solved = false;
+            break;
+        }
+    }
+
+    if (solved)
+    {
+        /* construct the solution path */
+        auto path(std::make_shared<PathGeometric>(si_));
+
+        for (int i = 0; i < solution_path.size(); i++)
+            path->append(solution_path[i]);
+
+        pdef_->addSolutionPath(path, false, 0.0, getName());
+    }
+
+    // need to free memory
+    for (int i = 0; i < solution_path.size(); i++)
+        si_->freeState(solution_path[i]);
+    
+    for (int i = 0; i < waypoints.size(); i++)
+        si_->freeState(waypoints[i]);
+
+    return solved ? base::PlannerStatus::EXACT_SOLUTION : base::PlannerStatus::TIMEOUT;
 }
 
 void ompl::geometric::MPNETRRT::getPlannerData(base::PlannerData &data) const
