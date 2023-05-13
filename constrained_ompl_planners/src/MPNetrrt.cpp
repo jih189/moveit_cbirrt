@@ -139,8 +139,8 @@ ompl::base::PlannerStatus ompl::geometric::MPNETRRT::solve(const base::PlannerTe
 
     // send commands to mpnet for waypoints.
     bool goal_reached = false;
-    base::State *current_state_candidate = start_state;
-    base::State *current_state_target = goal_state;
+    base::State *current_state_candidate = waypoints_start.back();
+    base::State *current_state_target = waypoints_goal.back();
     std::vector<base::State *>* waypoints_candidate = &waypoints_start;
     std::vector<base::State *>* waypoints_target = &waypoints_goal;
     // also include a time limit.
@@ -191,6 +191,7 @@ ompl::base::PlannerStatus ompl::geometric::MPNETRRT::solve(const base::PlannerTe
                 current_state_candidate = current_state_target;
                 current_state_target = next_step;
             }
+        }
         else
         {
             ROS_ERROR("Failed to call service next_step_predict");
