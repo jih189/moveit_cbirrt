@@ -4,64 +4,32 @@ project(constrained_ompl_planners)
 ## Compile as C++14, supported in ROS Melodic and newer
 add_compile_options(-std=c++14)
 
-#debug
-#set (CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -g ")
-#set (CMAKE_VERBOSE_MAKEFILE ON)
-
+set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+set(Torch_DIR /root/libtorch/share/cmake/Torch)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-
-  urdf
-  srdfdom
-  pluginlib
-  kdl_parser
-  #planning context depends
-  #rviz_visual_tools  #why?
-  #moveit_core
-  geometric_shapes
-  #moveit_ros_planning_interface
-  #moveit_simple_controller_manager
-  #moveit_planners_ompl
-  trac_ik_lib
 )  
 
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system filesystem date_time thread)
-#find_package(orocos_kdl REQUIRED)
 find_package(ompl REQUIRED)
-#find_package(rviz_visual_tools REQUIRED)
-#find_package(trac_ik_lib REQUIRED)
+find_package(Torch REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
     roscpp
-    urdf
-    srdfdom
-    pluginlib
-    kdl_parser  
-    #moveit_core 
-    #moveit_planners_ompl
-    #moveit_ros_planning_interface
-    #moveit_simple_controller_manager
-    #rviz_visual_tools
-    #trac_ik_lib
-                       #important
   LIBRARIES 
     ${PROJECT_NAME} 
-   # ${orocos_kdl_LIBRARIES}  
-   # ${ompl_libraries}#important
   INCLUDE_DIRS  #which is neede to indicate the include path
     include
     ${catkin_INCLUDE_DIRS}
     ${OMPL_INCLUDE_DIRS}
+    ${TORCH_INCLUDE_DIRS}
   DEPENDS
     EIGEN3
-    #orocos_kdl
-    #trac_ik_lib
-   # ompl
 )
 
 include_directories(
@@ -69,22 +37,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   SYSTEM ${EIGEN3_INCLUDE_DIRS}
   SYSTEM ${Boost_INCLUDE_DIRS}
-  #SYSTEM ${orocos_kdl_INCLUDE_DIRS} #otherwise error// old version
   SYSTEM ${OMPL_INCLUDE_DIRS}
-  #SYSTEM ${trac_ik_lib_INCLUDE_DIRS}
+  SYSTEM ${TORCH_INCLUDE_DIRS}
 )
+
 #link_directories(BEFORE ${OMPL_LIBRARY_DIRS})
 
-
-
-
 add_library(${PROJECT_NAME}
-	#src/kine_kdl.cpp
-	#src/pose_constraint.cpp
-	#src/iksolverpos_optp.cpp
-	#src/iksolverpos_tlp.cpp
-	#src/iksolverpos_trackp.cpp
-	#src/iksolvervel_project.cpp
   src/cbirrt.cpp
   src/DLbirrt.cpp
   src/DLcbirrt.cpp
@@ -93,15 +52,13 @@ add_library(${PROJECT_NAME}
 )
 target_link_libraries(
   ${PROJECT_NAME}
-   ${catkin_LIBRARIES} 
-   ${urdfdom_LIBRARIES} 
-   ${urdfdom_headers_LIBRARIES}
+  ${catkin_LIBRARIES} 
   ${OMPL_LIBRARIES} 
   ${Boost_LIBRARIES} 
-  #${orocos_kdl_LIBRARIES} 
-  #"/usr/lib/x86_64-linux-gnu/libnlopt.a" # the library of NLopt for optimization
-  )
+  ${TORCH_LIBRARIES}
+)
 #ompl should be OMPL
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
 # Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME}
@@ -116,6 +73,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
-
-
-

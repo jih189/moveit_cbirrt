@@ -45,6 +45,8 @@
 #include "ros/ros.h"
 #include <moveit_msgs/GetNextStep.h>
 
+#include <torch/torch.h>
+
 namespace ompl
 {
     namespace geometric
