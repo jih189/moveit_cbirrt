@@ -4,7 +4,7 @@ project(constrained_ompl_planners)
 ## Compile as C++14, supported in ROS Melodic and newer
 add_compile_options(-std=c++14)
 
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+#set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 set(Torch_DIR /root/libtorch/share/cmake/Torch)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -55,7 +55,7 @@ target_link_libraries(
   ${catkin_LIBRARIES} 
   ${OMPL_LIBRARIES} 
   ${Boost_LIBRARIES} 
-  ${TORCH_LIBRARIES}
+  #${TORCH_LIBRARIES}
 )
 #ompl should be OMPL
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
