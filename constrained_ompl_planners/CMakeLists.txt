@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  sensor_msgs
 )  
 
 find_package(Eigen3 REQUIRED)
@@ -49,6 +50,7 @@ add_library(${PROJECT_NAME}
   src/DLcbirrt.cpp
   src/CLazyPRM.cpp
   src/MPNetrrt.cpp
+  src/CMPNetrrt.cpp
 )
 target_link_libraries(
   ${PROJECT_NAME}

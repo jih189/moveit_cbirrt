@@ -53,9 +53,6 @@ ompl::geometric::CMPNETRRT::CMPNETRRT(const base::SpaceInformationPtr &si, bool 
 
     // initial a traditional planner for constrained based MPNet.
     traditional_planner = std::make_shared<ompl::geometric::RRT> (si);
-
-    ros::NodeHandle n;
-    client_ = n.serviceClient<moveit_msgs::GetNextStep>("next_step_predict");
 }
 
 ompl::geometric::CMPNETRRT::~CMPNETRRT()
@@ -121,93 +118,15 @@ ompl::base::PlannerStatus ompl::geometric::CMPNETRRT::solve(const base::PlannerT
     // std::cout << "goal configuration" << std::endl;
     // si_->printState(goal_state, std::cout);
 
-    // // convert both start and goal state into two vectors.
-    moveit_msgs::GetNextStep srv;
-
+    // convert both start and goal state into two vectors.
     pis_.restart();
-
-    // run the MPNet to generate the waypoints
-    std::vector<base::State *> waypoints_start;
-    std::vector<base::State *> waypoints_goal;
-    waypoints_start.push_back(si_->cloneState(start_state));
-    waypoints_goal.push_back(si_->cloneState(goal_state));
-
-    // send commands to mpnet for waypoints.
-    bool goal_reached = false;
-    base::State *current_state_candidate = waypoints_start.back();
-    base::State *current_state_target = waypoints_goal.back();
-    std::vector<base::State *>* waypoints_candidate = &waypoints_start;
-    std::vector<base::State *>* waypoints_target = &waypoints_goal;
-    // also include a time limit.
-    int time_limit = 50; // 50 seconds... TODO: this is a temporary solution.
-    //start the timer.
-    ros::Time start_time = ros::Time::now();
-    // we plan in a bidirectional way.
-    while(!goal_reached)
-    {
-        // timeout guard.
-        if ((ros::Time::now() - start_time).toSec() > time_limit)
-        {
-            std::cout << "time out" << std::endl;
-            break;
-        }
-        // write srv request.
-        for(int i = 0; i < si_->getStateDimension(); i++)
-        {
-            srv.request.start_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(current_state_candidate, i));
-            srv.request.goal_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(current_state_target, i));
-        }
-        // send the request to the service.
-        if(client_.call(srv))
-        {
-            // get the predicted next step.
-            // allocate memory for the next step.
-            base::State *next_step = si_->allocState();
-            for(int i = 0; i < si_->getStateDimension(); i++)
-            {
-                *(si_->getStateSpace()->getValueAddressAtIndex(next_step, i)) = srv.response.next_step[i];
-            }
-
-            // update the waypoints.
-            waypoints_candidate->push_back(next_step);
-            
-
-            // check if the goal is reached by trying to directly connect the candidate and the target.
-            if (si_->checkMotion(current_state_candidate, current_state_target))
-            {
-                goal_reached = true;
-            }
-            else
-            {
-                // swap the target and candidate.
-                std::vector<base::State *>* temp = waypoints_candidate;
-                waypoints_candidate = waypoints_target;
-                waypoints_target = temp;
-                current_state_candidate = current_state_target;
-                current_state_target = next_step;
-            }
-        }
-        else
-        {
-            ROS_ERROR("Failed to call service next_step_predict");
-            return base::PlannerStatus::ABORT;
-        }
-    }
 
     // now we have the waypoints, combine them into a single vector.
     std::vector<base::State *> waypoints;
-    for(int i = 0; i < waypoints_start.size(); i++)
-    {
-        waypoints.push_back(waypoints_start[i]);
-    }
-    for(int i = waypoints_goal.size() - 1; i >= 0; i--)
-    {
-        waypoints.push_back(waypoints_goal[i]);
-    }
-    
+    waypoints.push_back(si_->cloneState(start_state));
+    waypoints.push_back(si_->cloneState(goal_state));
 
     // Verification.
-
     std::vector<base::State *> solution_path;
     solution_path.push_back(si_->cloneState(waypoints[0]));
 

@@ -43,9 +43,8 @@
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include "ros/ros.h"
-#include <moveit_msgs/GetNextStep.h>
-
 #include <torch/torch.h>
+#include <sensor_msgs/PointCloud2.h>
 
 namespace ompl
 {
@@ -193,7 +192,7 @@ namespace ompl
             /** \brief The traditional planner used*/
             std::shared_ptr<base::Planner> traditional_planner;
 
-            ros::ServiceClient client_;
+	    ros::NodeHandle nh_;
         };
     }
 }

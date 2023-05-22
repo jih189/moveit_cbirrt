@@ -71,6 +71,7 @@
 #include <constrained_ompl_planners/DLbirrt.h>
 #include <constrained_ompl_planners/DLcbirrt.h>
 #include <constrained_ompl_planners/MPNetrrt.h>
+#include <constrained_ompl_planners/CMPNetrrt.h>
 
 #include <ompl/base/ConstrainedSpaceInformation.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
@@ -307,6 +308,7 @@ void ompl_interface::PlanningContextManager::registerDefaultPlanners()
   registerPlannerAllocatorHelper<og::DLBIRRT>("geometric::DLBIRRT");
   registerPlannerAllocatorHelper<og::DLCBIRRT>("geometric::DLCBIRRT");
   registerPlannerAllocatorHelper<og::MPNETRRT>("geometric::MPNETRRT");
+  registerPlannerAllocatorHelper<og::CMPNETRRT>("geometric::CMPNETRRT");
 }
 
 void ompl_interface::PlanningContextManager::registerDefaultStateSpaces()
