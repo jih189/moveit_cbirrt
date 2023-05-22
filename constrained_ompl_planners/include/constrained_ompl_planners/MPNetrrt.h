@@ -45,6 +45,7 @@
 #include "ros/ros.h"
 #include <moveit_msgs/GetNextStep.h>
 
+#include <torch/script.h>
 #include <torch/torch.h>
 
 namespace ompl
