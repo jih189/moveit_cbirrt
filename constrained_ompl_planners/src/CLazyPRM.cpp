@@ -182,13 +182,13 @@ void ompl::geometric::CLazyPRM::setRange(double distance)
         setup();
 }
 
-void ompl::geometric::CLazyPRM::addExperienceWaypoint(std::vector<double> waypoint)
-{
-    base::State* workState = si_->allocState();
-    si_->getStateSpace()->copyFromReals(workState, waypoint);
+// void ompl::geometric::CLazyPRM::addExperienceWaypoint(std::vector<double> waypoint)
+// {
+//     base::State* workState = si_->allocState();
+//     si_->getStateSpace()->copyFromReals(workState, waypoint);
 
-    addMilestone(workState);
-}
+//     addMilestone(workState);
+// }
 
 void ompl::geometric::CLazyPRM::setMaxNearestNeighbors(unsigned int k)
 {

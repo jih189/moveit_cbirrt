@@ -125,3 +125,11 @@ def list_to_transform(trf_list):
     trf_msg.rotation.z = trf_list[5]
     trf_msg.rotation.w = trf_list[6]
     return trf_msg
+
+def pointcloud_to_list(pointcloud):
+    pointcloud_list = []
+    for p in pointcloud.points:
+        pointcloud_list.append(p.x)
+        pointcloud_list.append(p.y)
+        pointcloud_list.append(p.z)
+    return pointcloud_list

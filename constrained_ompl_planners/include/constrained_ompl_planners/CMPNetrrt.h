@@ -44,6 +44,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include "ros/ros.h"
 #include <torch/torch.h>
+#include <torch/script.h>
 #include <sensor_msgs/PointCloud2.h>
 
 namespace ompl
@@ -121,6 +122,14 @@ namespace ompl
                 return maxDistance_;
             }
 
+            /** \brief Set the pointcloud for obstacle 
+                This function interprets the point cloud 
+                data as a sequence of vectors. In other words, 
+                the point cloud follows a format that 
+                resembles [p1x, p1y, p1z, p2x, p2y, p2z, ...].
+            */
+            void setObstaclePointcloud(std::vector<float>& pc);
+
             /** \brief Set a different nearest neighbors datastructure */
             template <template <typename T> class NN>
             void setNearestNeighbors()
@@ -192,7 +201,13 @@ namespace ompl
             /** \brief The traditional planner used*/
             std::shared_ptr<base::Planner> traditional_planner;
 
-	    ros::NodeHandle nh_;
+            ros::NodeHandle nh_;
+
+            std::vector<float> obstacle_point_cloud_;
+
+            // std::shared_ptr<torch::jit::script::Module> encoder_model_;
+            torch::jit::script::Module encoder_model;
+            torch::jit::script::Module mlp_model;
         };
     }
 }

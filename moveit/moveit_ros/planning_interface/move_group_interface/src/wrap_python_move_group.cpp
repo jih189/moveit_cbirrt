@@ -690,6 +690,21 @@ public:
     msg.position.z = v[2];
     setInHandPose(msg);
   }
+
+  void setObstaclePointcloudPython(bp::list& obstacle_point_cloud_list)
+  {
+    std::vector<double> v = py_bindings_tools::doubleFromList(obstacle_point_cloud_list);
+    sensor_msgs::PointCloud obstacle_point_cloud;
+    for(unsigned int i = 0; i < v.size() / 3; i++)
+    {
+      geometry_msgs::Point32 point;
+      point.x = v[3 * i + 0];
+      point.y = v[3 * i + 1];
+      point.z = v[3 * i + 2];
+      obstacle_point_cloud.points.push_back(point);
+    }
+    setObstaclePointcloud(obstacle_point_cloud);
+  }
 };
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(getJacobianMatrixOverloads, getJacobianMatrixPython, 1, 2)
@@ -849,6 +864,8 @@ static void wrap_move_group_interface()
   move_group_interface_class.def("set_in_hand_pose", &MoveGroupInterfaceWrapper::setInHandPosePython);
   move_group_interface_class.def("clear_action", &MoveGroupInterfaceWrapper::clearAction);
   move_group_interface_class.def("clear_in_hand_pose", &MoveGroupInterfaceWrapper::clearInHandPose);
+  move_group_interface_class.def("set_obstacle_point_cloud", &MoveGroupInterfaceWrapper::setObstaclePointcloudPython);
+  move_group_interface_class.def("clear_obstacle_point_cloud", &MoveGroupInterfaceWrapper::clearObstaclePointcloud);
 }
 }  // namespace planning_interface
 }  // namespace moveit

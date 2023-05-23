@@ -160,8 +160,8 @@ namespace ompl
                 return maxDistance_;
             }
 
-            /** \brief Add experience waypoint */
-            void addExperienceWaypoint(std::vector<double> waypoint);
+            // /** \brief Add experience waypoint */
+            // void addExperienceWaypoint(std::vector<double> waypoint);
 
             /** \brief Set a different nearest neighbors datastructure */
             template <template <typename T> class NN>

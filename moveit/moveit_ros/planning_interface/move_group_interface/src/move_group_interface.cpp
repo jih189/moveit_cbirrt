@@ -837,58 +837,58 @@ public:
     }
   }
 
-  moveit::core::MoveItErrorCode plan(Plan& plan, std::vector<MotionEdge>& experience)
-  {
-    if (!move_action_client_)
-    {
-      ROS_ERROR_STREAM_NAMED(LOGNAME, "move action client not found");
-      return moveit::core::MoveItErrorCode::FAILURE;
-    }
-    if (!move_action_client_->isServerConnected())
-    {
-      ROS_WARN_STREAM_NAMED(LOGNAME, "move action server not connected");
-      return moveit::core::MoveItErrorCode::COMMUNICATION_FAILURE;
-    }
+  // moveit::core::MoveItErrorCode plan(Plan& plan, std::vector<MotionEdge>& experience)
+  // {
+  //   if (!move_action_client_)
+  //   {
+  //     ROS_ERROR_STREAM_NAMED(LOGNAME, "move action client not found");
+  //     return moveit::core::MoveItErrorCode::FAILURE;
+  //   }
+  //   if (!move_action_client_->isServerConnected())
+  //   {
+  //     ROS_WARN_STREAM_NAMED(LOGNAME, "move action server not connected");
+  //     return moveit::core::MoveItErrorCode::COMMUNICATION_FAILURE;
+  //   }
 
-    moveit_msgs::MoveGroupGoal goal;
-    constructGoal(goal);
-    goal.planning_options.plan_only = true;
-    goal.planning_options.look_around = false;
-    goal.planning_options.replan = false;
-    goal.planning_options.planning_scene_diff.is_diff = true;
-    goal.planning_options.planning_scene_diff.robot_state.is_diff = true;
+  //   moveit_msgs::MoveGroupGoal goal;
+  //   constructGoal(goal);
+  //   goal.planning_options.plan_only = true;
+  //   goal.planning_options.look_around = false;
+  //   goal.planning_options.replan = false;
+  //   goal.planning_options.planning_scene_diff.is_diff = true;
+  //   goal.planning_options.planning_scene_diff.robot_state.is_diff = true;
 
-    setCleanPlanningContextFlag(false);
+  //   setCleanPlanningContextFlag(false);
 
-    move_action_client_->sendGoal(goal);
-    if (!move_action_client_->waitForResult())
-    {
-      ROS_INFO_STREAM_NAMED(LOGNAME, "MoveGroup action returned early");
-    }
-    if (move_action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-    {
-      plan.trajectory_ = move_action_client_->getResult()->planned_trajectory;
-      plan.start_state_ = move_action_client_->getResult()->trajectory_start;
-      plan.planning_time_ = move_action_client_->getResult()->planning_time;
-      // export the experience
-      int numberOfVerifiedEdge = move_action_client_->getResult()->verified_motion.verified_vertex_id_1.size();
-      experience.resize(numberOfVerifiedEdge);
-      for(int i = 0; i < numberOfVerifiedEdge; i++)
-      {
-          experience[i].verified_vertex_id_1_ = move_action_client_->getResult()->verified_motion.verified_vertex_id_1[i];
-          experience[i].verified_vertex_id_2_ = move_action_client_->getResult()->verified_motion.verified_vertex_id_2[i];
-          experience[i].verified_vertex_1_ = move_action_client_->getResult()->verified_motion.verified_vertex_1[i];
-          experience[i].verified_vertex_2_ = move_action_client_->getResult()->verified_motion.verified_vertex_2[i];
-      }
-      return move_action_client_->getResult()->error_code;
-    }
-    else
-    {
-      ROS_WARN_STREAM_NAMED(LOGNAME, "Fail: " << move_action_client_->getState().toString() << ": "
-                                              << move_action_client_->getState().getText());
-      return move_action_client_->getResult()->error_code;
-    }
-  }
+  //   move_action_client_->sendGoal(goal);
+  //   if (!move_action_client_->waitForResult())
+  //   {
+  //     ROS_INFO_STREAM_NAMED(LOGNAME, "MoveGroup action returned early");
+  //   }
+  //   if (move_action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+  //   {
+  //     plan.trajectory_ = move_action_client_->getResult()->planned_trajectory;
+  //     plan.start_state_ = move_action_client_->getResult()->trajectory_start;
+  //     plan.planning_time_ = move_action_client_->getResult()->planning_time;
+  //     // export the experience
+  //     int numberOfVerifiedEdge = move_action_client_->getResult()->verified_motion.verified_vertex_id_1.size();
+  //     experience.resize(numberOfVerifiedEdge);
+  //     for(int i = 0; i < numberOfVerifiedEdge; i++)
+  //     {
+  //         experience[i].verified_vertex_id_1_ = move_action_client_->getResult()->verified_motion.verified_vertex_id_1[i];
+  //         experience[i].verified_vertex_id_2_ = move_action_client_->getResult()->verified_motion.verified_vertex_id_2[i];
+  //         experience[i].verified_vertex_1_ = move_action_client_->getResult()->verified_motion.verified_vertex_1[i];
+  //         experience[i].verified_vertex_2_ = move_action_client_->getResult()->verified_motion.verified_vertex_2[i];
+  //     }
+  //     return move_action_client_->getResult()->error_code;
+  //   }
+  //   else
+  //   {
+  //     ROS_WARN_STREAM_NAMED(LOGNAME, "Fail: " << move_action_client_->getState().toString() << ": "
+  //                                             << move_action_client_->getState().getText());
+  //     return move_action_client_->getResult()->error_code;
+  //   }
+  // }
 
 
   moveit::core::MoveItErrorCode move(bool wait)
@@ -1140,9 +1140,14 @@ public:
       request.action_id = action_id_;
     }
 
-    if(experience_waypoints_.size() > 0) // there is a experience waypoints
+    //if(experience_waypoints_.size() > 0) // there is a experience waypoints
+    //{
+    //  request.experience_waypoints = experience_waypoints_;
+    //}
+
+    if(obstacle_point_cloud_.points.size())
     {
-      request.experience_waypoints = experience_waypoints_;
+      request.obstacle_point_cloud = obstacle_point_cloud_;
     }
 
     if (active_target_ == JOINT)
@@ -1386,15 +1391,25 @@ public:
     action_id_ = -1;
   }
 
-  void setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints)
+  //void setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints)
+  //{
+  //  experience_waypoints_ = experience_waypoints;
+  //}
+
+  void setObstaclePointcloud(const sensor_msgs::PointCloud& obstacle_point_cloud)
   {
-    experience_waypoints_ = experience_waypoints;
+    obstacle_point_cloud_ = obstacle_point_cloud;
   }
 
-  void clearExperience()
+  void clearObstaclePointcloud()
   {
-    experience_waypoints_.clear();
+    obstacle_point_cloud_.points.clear();
   }
+
+  //void clearExperience()
+  //{
+  //  experience_waypoints_.clear();
+  //}
 
 private:
   void initializeConstraintsStorageThread(const std::string& host, unsigned int port)
@@ -1477,8 +1492,9 @@ private:
   // this two informations will be used to select planning context.
   std::string action_name_;
   int action_id_;
-  std::vector<trajectory_msgs::JointTrajectoryPoint> experience_waypoints_;
+  //std::vector<trajectory_msgs::JointTrajectoryPoint> experience_waypoints_;
   bool is_cleanPlanningContext_;
+  sensor_msgs::PointCloud obstacle_point_cloud_;
 };
 
 MoveGroupInterface::MoveGroupInterface(const std::string& group_name, const std::shared_ptr<tf2_ros::Buffer>& tf_buffer,
@@ -1661,10 +1677,10 @@ moveit::core::MoveItErrorCode MoveGroupInterface::plan(Plan& plan)
   return impl_->plan(plan);
 }
 
-moveit::core::MoveItErrorCode MoveGroupInterface::plan(Plan& plan, std::vector<MotionEdge>& experience)
-{
-  return impl_->plan(plan, experience);
-}
+// moveit::core::MoveItErrorCode MoveGroupInterface::plan(Plan& plan, std::vector<MotionEdge>& experience)
+// {
+//   return impl_->plan(plan, experience);
+// }
 
 moveit_msgs::PickupGoal MoveGroupInterface::constructPickupGoal(const std::string& object,
                                                                 std::vector<moveit_msgs::Grasp> grasps,
@@ -2522,15 +2538,25 @@ void MoveGroupInterface::clearAction()
   impl_->clearAction();
 }
 
-void MoveGroupInterface::setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints)
+//void MoveGroupInterface::setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints)
+//{
+//  impl_->setExperience(experience_waypoints);
+//}
+
+void MoveGroupInterface::setObstaclePointcloud(const sensor_msgs::PointCloud& obstacle_point_cloud)
 {
-  impl_->setExperience(experience_waypoints);
+  impl_->setObstaclePointcloud(obstacle_point_cloud);
 }
 
-void MoveGroupInterface::clearExperience()
+void MoveGroupInterface::clearObstaclePointcloud()
 {
-  impl_->clearExperience();
+  impl_->clearObstaclePointcloud();
 }
+
+// void MoveGroupInterface::clearExperience()
+// {
+//   impl_->clearExperience();
+// }
 
 }  // namespace planning_interface
 }  // namespace moveit

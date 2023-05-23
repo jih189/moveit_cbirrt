@@ -72,6 +72,7 @@
 #include "ompl/base/objectives/MaximizeMinClearanceObjective.h"
 #include <ompl/geometric/planners/prm/LazyPRM.h>
 #include <constrained_ompl_planners/CLazyPRM.h>
+#include <constrained_ompl_planners/CMPNetrrt.h>
 
 #include <ompl/base/PlannerData.h>
 #include <ompl/base/PlannerDataGraph.h>
@@ -106,6 +107,7 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   , interpolate_(true)
   , hybridize_(true)
   , include_experience_(false)
+  , use_point_cloud_(false)
 {
   complete_initial_robot_state_.update();
 
@@ -379,6 +381,14 @@ void ompl_interface::ModelBasedPlanningContext::useConfig()
     cfg.erase(it);
   }
 
+  // check whether the planner should return experience
+  it = cfg.find("use_point_cloud");
+  if (it != cfg.end())
+  {
+    use_point_cloud_ = boost::lexical_cast<bool>(it->second);
+    cfg.erase(it);
+  }
+
   // check whether the path returned by the planner should be simplified
   it = cfg.find("simplify_solutions");
   if(it != cfg.end())
@@ -478,48 +488,48 @@ void ompl_interface::ModelBasedPlanningContext::interpolateSolution()
   }
 }
 
-void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface::MotionPlanResponse& res)
-{
-    ompl::base::PlannerData data(ompl_simple_setup_->getSpaceInformation());
-    ompl_simple_setup_->getPlannerData(data);
+// void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface::MotionPlanResponse& res)
+// {
+//     ompl::base::PlannerData data(ompl_simple_setup_->getSpaceInformation());
+//     ompl_simple_setup_->getPlannerData(data);
 
-    ompl::base::PlannerData::Graph::Type& graph = data.toBoostGraph();
-    boost::property_map<ompl::base::PlannerData::Graph, boost::vertex_index_t>::type indexPro(boost::get(boost::vertex_index_t(), graph));
+//     ompl::base::PlannerData::Graph::Type& graph = data.toBoostGraph();
+//     boost::property_map<ompl::base::PlannerData::Graph, boost::vertex_index_t>::type indexPro(boost::get(boost::vertex_index_t(), graph));
 
-    res.motion_edges.resize(data.numEdges());
+//     res.motion_edges.resize(data.numEdges());
 
-    moveit::core::RobotState rs1 = complete_initial_robot_state_;
-    moveit::core::RobotState rs2 = complete_initial_robot_state_;
-    std::vector<std::string> joint_names = spec_.state_space_->getJointModelGroup()->getJointModelNames();
+//     moveit::core::RobotState rs1 = complete_initial_robot_state_;
+//     moveit::core::RobotState rs2 = complete_initial_robot_state_;
+//     std::vector<std::string> joint_names = spec_.state_space_->getJointModelGroup()->getJointModelNames();
 
 
-    int count = 0;
-    foreach (const boost::graph_traits<ompl::base::PlannerData::Graph>::edge_descriptor e, boost::edges(graph))
-    {
-      // get the edge points states
-      const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v1 = boost::source(e, graph);
-      const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v2 = boost::target(e, graph);
-      const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
-      const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
-      // get the state id of edge points
-            res.motion_edges[count].verified_vertex_id_1_ = indexPro[v1];
-            res.motion_edges[count].verified_vertex_id_2_ = indexPro[v2];
+//     int count = 0;
+//     foreach (const boost::graph_traits<ompl::base::PlannerData::Graph>::edge_descriptor e, boost::edges(graph))
+//     {
+//       // get the edge points states
+//       const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v1 = boost::source(e, graph);
+//       const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v2 = boost::target(e, graph);
+//       const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
+//       const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
+//       // get the state id of edge points
+//             res.motion_edges[count].verified_vertex_id_1_ = indexPro[v1];
+//             res.motion_edges[count].verified_vertex_id_2_ = indexPro[v2];
 
-      // convert the ompl state to moveit robot state
-      spec_.state_space_->copyToRobotState(rs1, st1);
-      spec_.state_space_->copyToRobotState(rs2, st2);
+//       // convert the ompl state to moveit robot state
+//       spec_.state_space_->copyToRobotState(rs1, st1);
+//       spec_.state_space_->copyToRobotState(rs2, st2);
 
-      // set the joint names with their values
-      for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
-      {
-          res.motion_edges[count].verified_vertex_1_.name.push_back(joint_name);
-          res.motion_edges[count].verified_vertex_2_.name.push_back(joint_name);
-          res.motion_edges[count].verified_vertex_1_.position.push_back(rs1.getVariablePosition(joint_name));
-          res.motion_edges[count].verified_vertex_2_.position.push_back(rs2.getVariablePosition(joint_name));
-      }
-      count++;
-    }
-}
+//       // set the joint names with their values
+//       for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
+//       {
+//           res.motion_edges[count].verified_vertex_1_.name.push_back(joint_name);
+//           res.motion_edges[count].verified_vertex_2_.name.push_back(joint_name);
+//           res.motion_edges[count].verified_vertex_1_.position.push_back(rs1.getVariablePosition(joint_name));
+//           res.motion_edges[count].verified_vertex_2_.position.push_back(rs2.getVariablePosition(joint_name));
+//       }
+//       count++;
+//     }
+// }
 
 void ompl_interface::ModelBasedPlanningContext::convertPath(const ompl::geometric::PathGeometric& pg,
                                                             robot_trajectory::RobotTrajectory& traj) const
@@ -762,6 +772,25 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   // {
   //   if(ompl_planner_data_->numVertices() > 0) // if there is planner data, we need to load it to the planner
   //     planner->as<ompl::geometric::CLazyPRM>()->loadPlannerGraph(*ompl_planner_data_);
+
+  if(use_point_cloud_)
+  {
+    if(request_.obstacle_point_cloud.points.size() >= 2000)
+    {
+      std::vector<float> pointcloud;
+      pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
+      for (const geometry_msgs::Point32& point : request_.obstacle_point_cloud.points) {
+        pointcloud.push_back(point.x);
+        pointcloud.push_back(point.y);
+        pointcloud.push_back(point.z);
+      }
+      planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
+    }
+    else
+    {
+      std::cout << "the number of pointcloud received should be more than 2000" << std::endl;
+    }
+  }
 
 
   //   // if(include_experience_)

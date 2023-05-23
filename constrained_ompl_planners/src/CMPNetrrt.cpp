@@ -53,6 +53,11 @@ ompl::geometric::CMPNETRRT::CMPNETRRT(const base::SpaceInformationPtr &si, bool 
 
     // initial a traditional planner for constrained based MPNet.
     traditional_planner = std::make_shared<ompl::geometric::RRT> (si);
+
+    // set the models of encoder and mlp
+    // Deserialize the ScriptModule from a file using torch::jit::load().
+    encoder_model = torch::jit::load("/root/mpnet_fetch/pt_dir/encoder_model.pt");
+    mlp_model = torch::jit::load("/root/mpnet_fetch/pt_dir/mlp_model.pt");
 }
 
 ompl::geometric::CMPNETRRT::~CMPNETRRT()
@@ -120,6 +125,10 @@ ompl::base::PlannerStatus ompl::geometric::CMPNETRRT::solve(const base::PlannerT
 
     // convert both start and goal state into two vectors.
     pis_.restart();
+
+    // get obstacle as pointcloud
+    std::cout << "-------- pointcloud in solve -------------" << std::endl;
+    std::cout << obstacle_point_cloud_.size() << std::endl;
 
     // now we have the waypoints, combine them into a single vector.
     std::vector<base::State *> waypoints;
@@ -212,4 +221,9 @@ void ompl::geometric::CMPNETRRT::getPlannerData(base::PlannerData &data) const
         else
             data.addEdge(base::PlannerDataVertex(motion->parent->state), base::PlannerDataVertex(motion->state));
     }
+}
+
+void ompl::geometric::CMPNETRRT::setObstaclePointcloud(std::vector<float>& pc)
+{
+    obstacle_point_cloud_ = pc;
 }

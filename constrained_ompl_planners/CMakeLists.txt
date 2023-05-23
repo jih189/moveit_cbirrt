@@ -52,12 +52,13 @@ add_library(${PROJECT_NAME}
   src/MPNetrrt.cpp
   src/CMPNetrrt.cpp
 )
+
 target_link_libraries(
   ${PROJECT_NAME}
   ${catkin_LIBRARIES} 
   ${OMPL_LIBRARIES} 
   ${Boost_LIBRARIES} 
-  #${TORCH_LIBRARIES}
+  ${TORCH_LIBRARIES}
 )
 #ompl should be OMPL
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)

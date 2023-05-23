@@ -46,6 +46,8 @@
 #include <ompl/base/StateStorage.h>
 #include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
 
+#include <geometry_msgs/Point32.h>
+
 namespace ompl_interface
 {
 namespace ob = ompl::base;
@@ -287,6 +289,11 @@ public:
     include_experience_ = flag;
   }
 
+  void setUsePointCloud(bool flag)
+  {
+    use_point_cloud_ = flag;
+  }
+
   void setInterpolation(bool flag)
   {
     interpolate_ = flag;
@@ -331,7 +338,7 @@ public:
   void interpolateSolution();
 
   /* @brief Extract the experience from the planner*/
-  void getExperience(planning_interface::MotionPlanResponse& res);
+  // void getExperience(planning_interface::MotionPlanResponse& res);
 
   /* @brief Get the solution as a RobotTrajectory object*/
   bool getSolutionPath(robot_trajectory::RobotTrajectory& traj) const;
@@ -466,5 +473,8 @@ protected:
 
   // if true, the planner data will be included into the response
   bool include_experience_;
+
+  // if true, the planner will read the obstacle as pointcloud
+  bool use_point_cloud_;
 };
 }  // namespace ompl_interface

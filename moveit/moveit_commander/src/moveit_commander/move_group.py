@@ -793,3 +793,8 @@ class MoveGroupCommander(object):
     def set_in_hand_pose(self, in_hand_pose):
         """Set the object pose in hand so the object will be the new end-effector which the constraint is applied on """
         self._g.set_in_hand_pose(conversions.pose_to_list(in_hand_pose))
+
+    def set_obstacle_point_cloud(self, obstacle_point_cloud):
+        """Set the obstacle pointcloud """
+        # need to convert pointcloud into list
+        self._g.set_obstacle_point_cloud(conversions.pointcloud_to_list(obstacle_point_cloud))

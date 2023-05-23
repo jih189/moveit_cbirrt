@@ -65,5 +65,8 @@ int32 action_id
 # experience waypoints. This is a sequence of joint configurations used to speed up planning. If you can't find any experience, then keep it empty.
 trajectory_msgs/JointTrajectoryPoint[] experience_waypoints
 
+# obstacle waypoints. This is the pointcloud used to represent obstacle. We can use it in deep learning based method. If you do not use that, then keep it empty.
+sensor_msgs/PointCloud obstacle_point_cloud
+
 # if this flag is set to true, then it will clean all planning context before planning.
 bool cleanPlanningContext
