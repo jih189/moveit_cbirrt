@@ -778,11 +778,20 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
     if(request_.obstacle_point_cloud.points.size() >= 2000)
     {
       std::vector<float> pointcloud;
-      pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
-      for (const geometry_msgs::Point32& point : request_.obstacle_point_cloud.points) {
-        pointcloud.push_back(point.x);
-        pointcloud.push_back(point.y);
-        pointcloud.push_back(point.z);
+      // pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
+      pointcloud.reserve(2000 * 3); // optimize memory allocation
+
+      std::srand(std::time(nullptr)); // use current time as seed for random generator
+      std::vector<int> indices(request_.obstacle_point_cloud.points.size()); // array of indices
+      std::iota(indices.begin(), indices.end(), 0); // Fill with consecutive integers
+      std::random_shuffle(indices.begin(), indices.end()); // Randomly shuffle indices
+
+      // for (const geometry_msgs::Point32& point : request_.obstacle_point_cloud.points) {
+      for(int i = 0; i < 2000; i++) {
+        const geometry_msgs::Point32 p = request_.obstacle_point_cloud.points[indices[i]];
+        pointcloud.push_back(p.x);
+        pointcloud.push_back(p.y);
+        pointcloud.push_back(p.z);
       }
       planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
     }

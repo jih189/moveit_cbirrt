@@ -127,8 +127,9 @@ ompl::base::PlannerStatus ompl::geometric::CMPNETRRT::solve(const base::PlannerT
     pis_.restart();
 
     // get obstacle as pointcloud
-    std::cout << "-------- pointcloud in solve -------------" << std::endl;
-    std::cout << obstacle_point_cloud_.size() << std::endl;
+    std::vector<torch::jit::IValue> env_inputs;
+    env_inputs.push_back(torch::from_blob(obstacle_point_cloud_.data(), {1, 6000}));
+    at::Tensor env_output = encoder_model.forward(env_inputs).toTensor();
 
     // now we have the waypoints, combine them into a single vector.
     std::vector<base::State *> waypoints;
