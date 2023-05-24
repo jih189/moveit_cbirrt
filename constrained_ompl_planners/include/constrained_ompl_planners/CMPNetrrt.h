@@ -39,7 +39,7 @@
 
 #include "ompl/datastructures/NearestNeighbors.h"
 #include "ompl/geometric/planners/PlannerIncludes.h"
-#include <ompl/geometric/planners/rrt/RRT.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include "ros/ros.h"
@@ -141,6 +141,25 @@ namespace ompl
                 setup();
             }
 
+            std::vector<float> joint_normalize(const std::vector<float>& joint_vector, const std::vector<float>& q_min, const std::vector<float>& q_max)
+            {
+                std::vector<float> normalized_joint_vector(joint_vector.size());
+                for (size_t i = 0; i < joint_vector.size(); ++i) {
+                    normalized_joint_vector[i] = (joint_vector[i] - q_min[i]) / (q_max[i] - q_min[i]);
+                }
+                return normalized_joint_vector;
+            }
+
+            std::vector<float> joint_unnormalize(const std::vector<float>& normalized_joint_vector, 
+                               const std::vector<float>& q_min, 
+                               const std::vector<float>& q_max) {
+                std::vector<float> joint_vector(normalized_joint_vector.size());
+                for (size_t i = 0; i < normalized_joint_vector.size(); ++i) {
+                    joint_vector[i] = normalized_joint_vector[i] * (q_max[i] - q_min[i]) + q_min[i];
+                }
+                return joint_vector;
+            }
+
             void setup() override;
 
         protected:
@@ -208,6 +227,9 @@ namespace ompl
             // std::shared_ptr<torch::jit::script::Module> encoder_model_;
             torch::jit::script::Module encoder_model;
             torch::jit::script::Module mlp_model;
+
+            std::vector<float> joint_min{1.6056, 1.518, 3.14159, 2.251, 3.14159, 2.16, 3.14159};
+            std::vector<float> joint_max{-1.6056, -1.221,-3.14159, -2.251, -3.14159, -2.16, -3.14159};
         };
     }
 }

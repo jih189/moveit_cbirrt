@@ -35,6 +35,8 @@
 /* Author: Ioan Sucan */
 #include "constrained_ompl_planners/CMPNetrrt.h"
 #include <limits>
+#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
+#include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include "ompl/base/goals/GoalSampleableRegion.h"
 #include "ompl/tools/config/SelfConfig.h"
 
@@ -52,12 +54,18 @@ ompl::geometric::CMPNETRRT::CMPNETRRT(const base::SpaceInformationPtr &si, bool 
     addIntermediateStates_ = addIntermediateStates;
 
     // initial a traditional planner for constrained based MPNet.
-    traditional_planner = std::make_shared<ompl::geometric::RRT> (si);
+    traditional_planner = std::make_shared<ompl::geometric::RRTConnect> (si);
 
     // set the models of encoder and mlp
     // Deserialize the ScriptModule from a file using torch::jit::load().
     encoder_model = torch::jit::load("/root/mpnet_fetch/pt_dir/encoder_model.pt");
     mlp_model = torch::jit::load("/root/mpnet_fetch/pt_dir/mlp_model.pt");
+
+    encoder_model.to(at::kCUDA);
+    mlp_model.to(at::kCUDA);
+
+    // q_max = {-1.6056, -1.221,-3.14159, -2.251, -3.14159, -2.16, -3.14159};
+    // q_min = {1.6056, 1.518, 3.14159, 2.251, 3.14159, 2.16, 3.14159};
 }
 
 ompl::geometric::CMPNETRRT::~CMPNETRRT()
@@ -118,24 +126,143 @@ ompl::base::PlannerStatus ompl::geometric::CMPNETRRT::solve(const base::PlannerT
     const base::State *start_state = pis_.nextStart();
     const base::State *goal_state = pis_.nextGoal(ptc);
 
-    // std::cout << "start configuration" << std::endl;
-    // si_->printState(start_state, std::cout);
-    // std::cout << "goal configuration" << std::endl;
-    // si_->printState(goal_state, std::cout);
-
     // convert both start and goal state into two vectors.
     pis_.restart();
 
     // get obstacle as pointcloud
     std::vector<torch::jit::IValue> env_inputs;
-    env_inputs.push_back(torch::from_blob(obstacle_point_cloud_.data(), {1, 6000}));
-    at::Tensor env_output = encoder_model.forward(env_inputs).toTensor();
+    env_inputs.push_back(torch::from_blob(obstacle_point_cloud_.data(), {1, 6000}).to(at::kCUDA));
+    at::Tensor env_output = encoder_model.forward(env_inputs).toTensor().to(at::kCPU);
+
+    std::vector<base::State *> path1;
+    std::vector<base::State *> path2;
+
+    path1.push_back(si_->cloneState(start_state));
+    path2.push_back(si_->cloneState(goal_state));
+
+    int step = 0;
+    bool target_reached = false;
+    std::vector<torch::jit::IValue> mlp_input;
+
+    int numOfAttempt = 30;
+
+    while(step < numOfAttempt)
+    {
+        base::State * path_1_end = path1.back();
+        base::State * path_2_end = path2.back();
+        // check whether forward path and backward path are connected or not.
+        if(si_->checkMotion(path_1_end, path_2_end))
+        {
+            target_reached = true;
+            break;
+        }
+        // get start goal tensor
+        std::vector<float> path1_vec;
+        std::vector<float> path2_vec;
+        for(int i = 0; i < si_->getStateDimension(); i++)
+        {
+            path1_vec.push_back((float)*(si_->getStateSpace()->getValueAddressAtIndex(path_1_end, i)));
+            path2_vec.push_back((float)*(si_->getStateSpace()->getValueAddressAtIndex(path_2_end, i)));
+        }
+
+        // normalize both start and goal joint
+        std::vector<float> normalized_path1_vec = joint_normalize(path1_vec, joint_min, joint_max);
+        std::vector<float> normalized_path2_vec = joint_normalize(path2_vec, joint_min, joint_max);
+
+        // create tensor for both start and goal joint
+        torch::Tensor path1_tensor = torch::from_blob(normalized_path1_vec.data(), {1, si_->getStateDimension()});
+        torch::Tensor path2_tensor = torch::from_blob(normalized_path2_vec.data(), {1, si_->getStateDimension()});
+
+        torch::Tensor mlp_input_tensor;
+
+        if(step % 2 == 0)
+            mlp_input_tensor = torch::cat({path1_tensor, path2_tensor, env_output}, 1).to(at::kCUDA);
+        else
+            mlp_input_tensor = torch::cat({path2_tensor, path1_tensor, env_output}, 1).to(at::kCUDA);
+
+        // predict the next step
+        mlp_input.push_back(mlp_input_tensor);
+
+        bool predict_fesible = false;
+        base::State * next_state = si_->allocState();
+
+        int sample_step = 0;
+        while(!predict_fesible && sample_step < 50)
+        {
+            torch::Tensor mlp_output = mlp_model.forward(mlp_input).toTensor().to(at::kCPU);
+            std::vector<float> normalized_predict_vec(mlp_output.data_ptr<float>(), mlp_output.data_ptr<float>() + mlp_output.numel());
+            std::vector<float> predict_vec = joint_unnormalize(normalized_predict_vec, joint_min, joint_max);
+            
+            for(int i = 0; i < si_->getStateDimension(); i++)
+                *(si_->getStateSpace()->getValueAddressAtIndex(next_state, i)) = predict_vec[i];
+
+            // need to shorten the next step if the distance is too far.
+            if(step % 2 == 0)
+            {
+                double d = si_->distance(path_1_end, next_state);
+                if( d > maxDistance_ )
+                {
+                    si_->getStateSpace()->interpolate(path_1_end, next_state, maxDistance_ / d, next_state);
+                    if (si_->equalStates(path_1_end, next_state))
+                        continue;
+                }
+            }
+            else
+            {
+                double d = si_->distance(path_2_end, next_state);
+                if( d > maxDistance_ )
+                {
+                    si_->getStateSpace()->interpolate(path_2_end, next_state, maxDistance_ / d, next_state);
+                    if (si_->equalStates(path_2_end, next_state))
+                        continue;
+                }
+            }
+
+            // project the state to the manifold
+            si_->getStateSpace()->as<base::ProjectedStateSpace>()->getConstraint()->project(next_state);
+
+            // check feasible of the new state
+            if(si_->isValid(next_state))
+            {
+                predict_fesible = true;
+            }
+            else
+            {
+                sample_step++;
+            }
+        }
+
+        if(step % 2 == 0)
+            path1.push_back(next_state);
+        else
+            path2.push_back(next_state);
+
+        mlp_input.clear();
+
+        if(!predict_fesible) // if sample is not possible, then break
+            break;
+
+        step++;
+    }
+
+    if(!target_reached)
+    {
+        // no solution, so we need to clean memory.
+        for (int i = 0; i < path1.size(); i++)
+            si_->freeState(path1[i]);
+        for (int i = 0; i < path2.size(); i++)
+            si_->freeState(path2[i]);
+        // fail to find a possible solution
+        return base::PlannerStatus::INFEASIBLE;
+    }
 
     // now we have the waypoints, combine them into a single vector.
-    std::vector<base::State *> waypoints;
-    waypoints.push_back(si_->cloneState(start_state));
-    waypoints.push_back(si_->cloneState(goal_state));
-
+    std::vector<base::State *> waypoints = path1;
+    waypoints.insert(waypoints.end(), path2.rbegin(), path2.rend());
+    // std::cout << "the predicted waypoint length = " << waypoints.size() << std::endl;
+    // waypoints.push_back(si_->cloneState(start_state));
+    // waypoints.push_back(si_->cloneState(goal_state));
+    
     // Verification.
     std::vector<base::State *> solution_path;
     solution_path.push_back(si_->cloneState(waypoints[0]));
@@ -160,26 +287,39 @@ ompl::base::PlannerStatus ompl::geometric::CMPNETRRT::solve(const base::PlannerT
             // set the start and goal states
             local_pdef->setStartAndGoalStates(current_state, next_state);
 
+            traditional_planner->clear();
+
             // pass the local problem def to the planner
             traditional_planner->setProblemDefinition(local_pdef);
 
-            traditional_planner->setup();
+            if(!traditional_planner->isSetup())
+                traditional_planner->setup();
 
-            ompl::base::PlannerStatus local_solved = traditional_planner->ompl::base::Planner::solve(1.0);
+            // if the next point is the last one, then we can set with larger planning time. You can set a larger time here to gurantee the success rate.
+            ompl::base::PlannerStatus local_solved = traditional_planner->ompl::base::Planner::solve((i + 1 == waypoints.size() - 1) ? 0.4 : 0.2);
 
             if (local_solved)
             {
                 ompl::base::PathPtr local_path = local_pdef->getSolutionPath();
                 for(int j = 0; j < local_path->as<ompl::geometric::PathGeometric>()->getStateCount(); j++)
-                {
                     solution_path.push_back(si_->cloneState(local_path->as<ompl::geometric::PathGeometric>()->getState(j)));
-                }
 
                 continue;
             }
-
-            solved = false;
-            break;
+            else
+            {
+                if( i + 1 == waypoints.size() - 1) // if the next state is the last state, then we can't skip it.
+                {
+                    solved = false;
+                    break;
+                }
+                else{
+                    // over write the next state with the current state so we can skip
+                    si_->freeState(waypoints[i+1]);
+                    waypoints[i+1] = si_->cloneState(waypoints[i]);
+                    continue;
+                }
+            }
         }
     }
 
