@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1.3)
 project(moveit_planners_ompl)
 
+set(Torch_DIR /root/libtorch/share/cmake/Torch)
+
 find_package(Boost REQUIRED system filesystem date_time thread serialization)
 find_package(catkin REQUIRED COMPONENTS
   moveit_core
@@ -16,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 moveit_build_options()
 
 find_package(ompl REQUIRED)
+find_package(Torch REQUIRED)
 
 generate_dynamic_reconfigure_options("ompl_interface/cfg/OMPLDynamicReconfigure.cfg")
 
