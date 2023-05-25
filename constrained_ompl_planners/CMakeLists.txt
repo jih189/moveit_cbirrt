@@ -7,6 +7,8 @@ add_compile_options(-std=c++14)
 #set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 set(Torch_DIR /root/libtorch/share/cmake/Torch)
 
+list( APPEND CMAKE_INSTALL_RPATH /root/libtorch/lib)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -43,7 +45,6 @@ include_directories(
 )
 
 #link_directories(BEFORE ${OMPL_LIBRARY_DIRS})
-link_directories(/root/libtorch/libs)
 
 add_library(${PROJECT_NAME}
   src/cbirrt.cpp
