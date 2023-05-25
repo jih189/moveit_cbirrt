@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.1.3)
 project(moveit_ros_planning)
 
-set(Torch_DIR /root/libtorch/share/cmake/Torch)
-
 find_package(Boost REQUIRED system filesystem date_time program_options thread chrono)
 find_package(catkin REQUIRED COMPONENTS
   moveit_core
@@ -25,7 +23,6 @@ find_package(catkin REQUIRED COMPONENTS
 moveit_build_options()
 
 find_package(Eigen3 REQUIRED)
-find_package(Torch REQUIRED)
 
 generate_dynamic_reconfigure_options(
   "planning_scene_monitor/cfg/PlanningSceneMonitorDynamicReconfigure.cfg"
