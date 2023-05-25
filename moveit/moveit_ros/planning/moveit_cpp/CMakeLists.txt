@@ -10,7 +10,8 @@ target_link_libraries(${MOVEIT_LIB_NAME}
   moveit_planning_pipeline
   moveit_trajectory_execution_manager
   ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES})
+  ${Boost_LIBRARIES}
+  ${TORCH_LIBRARIES})
 add_dependencies(${MOVEIT_LIB_NAME} ${catkin_EXPORTED_TARGETS})
 
 if (CATKIN_ENABLE_TESTING)

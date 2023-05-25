@@ -39,7 +39,8 @@ include_directories(ompl_interface/include)
 include_directories(SYSTEM
                     ${catkin_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS}
-                    ${OMPL_INCLUDE_DIRS})
+                    ${OMPL_INCLUDE_DIRS}
+		    ${TORCH_INCLUDE_DIRS})
 
 add_subdirectory(ompl_interface)
 

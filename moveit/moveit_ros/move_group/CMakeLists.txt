@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1.3)
 project(moveit_ros_move_group)
 
+set(Torch_DIR /root/libtorch/share/cmake/Torch)
+
 find_package(Boost REQUIRED system filesystem date_time program_options thread)
 find_package(catkin REQUIRED COMPONENTS
   moveit_core
@@ -13,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs
   tf2_ros
 )
+find_package(Torch REQUIRED)
+
 moveit_build_options()
 
 catkin_package(
@@ -62,10 +66,10 @@ add_library(moveit_move_group_default_capabilities
 set_target_properties(moveit_move_group_default_capabilities PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
 add_dependencies(moveit_move_group_default_capabilities ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(moveit_move_group_capabilities_base ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(move_group moveit_move_group_capabilities_base ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(moveit_move_group_default_capabilities moveit_move_group_capabilities_base ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(list_move_group_capabilities ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(moveit_move_group_capabilities_base ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${TORCH_LIBRARIES})
+target_link_libraries(move_group moveit_move_group_capabilities_base ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${TORCH_LIBRARIES})
+target_link_libraries(moveit_move_group_default_capabilities moveit_move_group_capabilities_base ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${TORCH_LIBRARIES})
+target_link_libraries(list_move_group_capabilities ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${TORCH_LIBRARIES})
 
 install(TARGETS move_group list_move_group_capabilities
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
