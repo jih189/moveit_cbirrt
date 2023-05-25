@@ -43,6 +43,7 @@ include_directories(
 )
 
 #link_directories(BEFORE ${OMPL_LIBRARY_DIRS})
+link_directories(/root/libtorch/libs)
 
 add_library(${PROJECT_NAME}
   src/cbirrt.cpp
