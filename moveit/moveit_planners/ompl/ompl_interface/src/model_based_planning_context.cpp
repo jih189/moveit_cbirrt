@@ -73,6 +73,7 @@
 #include <ompl/geometric/planners/prm/LazyPRM.h>
 #include <constrained_ompl_planners/CLazyPRM.h>
 #include <constrained_ompl_planners/CMPNetrrt.h>
+#include <constrained_ompl_planners/CVQMPTrrt.h>
 
 #include <ompl/base/PlannerData.h>
 #include <ompl/base/PlannerDataGraph.h>
@@ -793,7 +794,18 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
         pointcloud.push_back(p.y);
         pointcloud.push_back(p.z);
       }
-      planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
+      if(planner->getName() == "CMPNETRRT")
+      {
+        planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
+      }
+      else if(planner->getName() == "CVQMPTRRT")
+      {
+        planner->as<ompl::geometric::CVQMPTRRT>()->setObstaclePointcloud(pointcloud);
+      }
+      else
+      {
+        std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
+      }
     }
     else
     {

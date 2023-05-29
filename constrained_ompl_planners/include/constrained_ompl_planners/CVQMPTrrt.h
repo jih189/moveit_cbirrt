@@ -110,6 +110,14 @@ namespace ompl
                 return maxDistance_;
             }
 
+            /** \brief Set the pointcloud for obstacle 
+                This function interprets the point cloud 
+                data as a sequence of vectors. In other words, 
+                the point cloud follows a format that 
+                resembles [p1x, p1y, p1z, p2x, p2y, p2z, ...].
+            */
+            void setObstaclePointcloud(std::vector<float>& pc);
+
             /** \brief Set a different nearest neighbors datastructure */
             template <template <typename T> class NN>
             void setNearestNeighbors()
@@ -204,14 +212,6 @@ namespace ompl
             double distanceBetweenTrees_;
 
             std::vector<float> obstacle_point_cloud_;
-
-            /** \brief Set the pointcloud for obstacle 
-                This function interprets the point cloud 
-                data as a sequence of vectors. In other words, 
-                the point cloud follows a format that 
-                resembles [p1x, p1y, p1z, p2x, p2y, p2z, ...].
-            */
-            void setObstaclePointcloud(std::vector<float>& pc);
 
             struct Gaussian {
                 Eigen::VectorXd mean;
