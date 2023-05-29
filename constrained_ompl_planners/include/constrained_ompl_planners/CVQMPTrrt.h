@@ -34,63 +34,51 @@
 
 /* Author: Ioan Sucan */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_CMPNETRRT_
-#define OMPL_GEOMETRIC_PLANNERS_RRT_CMPNETRRT_
+#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_C_VQMPT_RRT_
+#define OMPL_GEOMETRIC_PLANNERS_RRT_C_VQMPT_RRT_
 
 #include "ompl/datastructures/NearestNeighbors.h"
 #include "ompl/geometric/planners/PlannerIncludes.h"
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
-// #include "ros/ros.h"
-#include <torch/torch.h>
-#include <torch/script.h>
-#include <sensor_msgs/PointCloud2.h>
+#include "ros/ros.h"
+#include <moveit_msgs/GetSamplingDistributionSequence.h>
+#include <moveit_msgs/SamplingDistribution.h>
+
+#include <Eigen/Dense>
+#include <random>
 
 namespace ompl
 {
     namespace geometric
     {
         /**
-           @anchor gRRT
+           @anchor gRRTC
            @par Short description
-           MPNet RRT is a RRT based planner which generates a coarse planner via MPNet.
+           The basic idea is to grow two RRTs, one from the start and
+           one from the goal, and attempt to connect them.
+           @par External documentation
+           J. Kuffner and S.M. LaValle, RRT-connect: An efficient approach to single-query path planning, in <em>Proc.
+           2000 IEEE Intl. Conf. on Robotics and Automation</em>, pp. 995–1001, Apr. 2000. DOI:
+           [10.1109/ROBOT.2000.844730](http://dx.doi.org/10.1109/ROBOT.2000.844730)<br>
+           [[PDF]](http://ieeexplore.ieee.org/ielx5/6794/18246/00844730.pdf?tp=&arnumber=844730&isnumber=18246)
+           [[more]](http://msl.cs.uiuc.edu/~lavalle/rrtpubs.html)
         */
 
-        /** \brief Rapidly-exploring Random Trees */
-        class CMPNETRRT : public base::Planner
+        /** \brief RRT-Connect (CVQMPTRRT) */
+        class CVQMPTRRT : public base::Planner
         {
         public:
             /** \brief Constructor */
-            CMPNETRRT(const base::SpaceInformationPtr &si, bool addIntermediateStates = false);
+            CVQMPTRRT(const base::SpaceInformationPtr &si, bool addIntermediateStates = false);
 
-            ~CMPNETRRT() override;
+            ~CVQMPTRRT() override;
 
             void getPlannerData(base::PlannerData &data) const override;
 
             base::PlannerStatus solve(const base::PlannerTerminationCondition &ptc) override;
 
             void clear() override;
-
-            /** \brief Set the goal bias
-
-                In the process of randomly selecting states in
-                the state space to attempt to go towards, the
-                algorithm may in fact choose the actual goal state, if
-                it knows it, with some probability. This probability
-                is a real number between 0.0 and 1.0; its value should
-                usually be around 0.05 and should not be too large. It
-                is probably a good idea to use the default value. */
-            void setGoalBias(double goalBias)
-            {
-                goalBias_ = goalBias;
-            }
-
-            /** \brief Get the goal bias the planner is using */
-            double getGoalBias() const
-            {
-                return goalBias_;
-            }
 
             /** \brief Return true if the intermediate states generated along motions are to be added to the tree itself
              */
@@ -122,68 +110,58 @@ namespace ompl
                 return maxDistance_;
             }
 
-            /** \brief Set the pointcloud for obstacle 
-                This function interprets the point cloud 
-                data as a sequence of vectors. In other words, 
-                the point cloud follows a format that 
-                resembles [p1x, p1y, p1z, p2x, p2y, p2z, ...].
-            */
-            void setObstaclePointcloud(std::vector<float>& pc);
-
             /** \brief Set a different nearest neighbors datastructure */
             template <template <typename T> class NN>
             void setNearestNeighbors()
             {
-                if (nn_ && nn_->size() != 0)
+                if ((tStart_ && tStart_->size() != 0) || (tGoal_ && tGoal_->size() != 0))
                     OMPL_WARN("Calling setNearestNeighbors will clear all states.");
                 clear();
-                nn_ = std::make_shared<NN<Motion *>>();
+                tStart_ = std::make_shared<NN<Motion *>>();
+                tGoal_ = std::make_shared<NN<Motion *>>();
                 setup();
-            }
-
-            std::vector<float> joint_normalize(const std::vector<float>& joint_vector, const std::vector<float>& q_min, const std::vector<float>& q_max)
-            {
-                std::vector<float> normalized_joint_vector(joint_vector.size());
-                for (size_t i = 0; i < joint_vector.size(); ++i) {
-                    normalized_joint_vector[i] = (joint_vector[i] - q_min[i]) / (q_max[i] - q_min[i]);
-                }
-                return normalized_joint_vector;
-            }
-
-            std::vector<float> joint_unnormalize(const std::vector<float>& normalized_joint_vector, 
-                               const std::vector<float>& q_min, 
-                               const std::vector<float>& q_max) {
-                std::vector<float> joint_vector(normalized_joint_vector.size());
-                for (size_t i = 0; i < normalized_joint_vector.size(); ++i) {
-                    joint_vector[i] = normalized_joint_vector[i] * (q_max[i] - q_min[i]) + q_min[i];
-                }
-                return joint_vector;
             }
 
             void setup() override;
 
         protected:
-            /** \brief Representation of a motion
-
-                This only contains pointers to parent motions as we
-                only need to go backwards in the tree. */
+            /** \brief Representation of a motion */
             class Motion
             {
             public:
                 Motion() = default;
 
-                /** \brief Constructor that allocates memory for the state */
                 Motion(const base::SpaceInformationPtr &si) : state(si->allocState())
                 {
                 }
 
                 ~Motion() = default;
 
-                /** \brief The state contained by the motion */
+                const base::State *root{nullptr};
                 base::State *state{nullptr};
-
-                /** \brief The parent motion in the exploration tree */
                 Motion *parent{nullptr};
+            };
+
+            /** \brief A nearest-neighbor datastructure representing a tree of motions */
+            using TreeData = std::shared_ptr<NearestNeighbors<Motion *>>;
+
+            /** \brief Information attached to growing a tree of motions (used internally) */
+            struct TreeGrowingInfo
+            {
+                base::State *xstate;
+                Motion *xmotion;
+                bool start;
+            };
+
+            /** \brief The state of the tree after an attempt to extend it */
+            enum GrowState
+            {
+                /// no progress has been made
+                TRAPPED,
+                /// progress has been made towards the randomly sampled state
+                ADVANCED,
+                /// the randomly sampled state was reached
+                REACHED
             };
 
             /** \brief Free the memory allocated by this planner */
@@ -195,15 +173,20 @@ namespace ompl
                 return si_->distance(a->state, b->state);
             }
 
+            /** \brief Grow a tree towards a random state */
+            GrowState growTree(TreeData &tree, TreeGrowingInfo &tgi, Motion *rmotion);
+
             /** \brief State sampler */
             base::StateSamplerPtr sampler_;
 
-            /** \brief A nearest-neighbors datastructure containing the tree of motions */
-            std::shared_ptr<NearestNeighbors<Motion *>> nn_;
+            /** \brief The start tree */
+            TreeData tStart_;
 
-            /** \brief The fraction of time the goal is picked as the state to expand towards (if such a state is
-             * available) */
-            double goalBias_{.05};
+            /** \brief The goal tree */
+            TreeData tGoal_;
+
+            /** \brief A flag that toggles between expanding the start tree (true) or goal tree (false). */
+            bool startTree_{true};
 
             /** \brief The maximum length of a motion to be added to a tree */
             double maxDistance_{0.};
@@ -214,22 +197,47 @@ namespace ompl
             /** \brief The random number generator */
             RNG rng_;
 
-            /** \brief The most recent goal motion.  Used for PlannerData computation */
-            Motion *lastGoalMotion_{nullptr};
+            /** \brief The pair of states in each tree connected during planning.  Used for PlannerData computation */
+            std::pair<base::State *, base::State *> connectionPoint_;
 
-            /** \brief The traditional planner used*/
-            std::shared_ptr<base::Planner> traditional_planner;
-
-            // ros::NodeHandle nh_;
+            /** \brief Distance between the nearest pair of start tree and goal tree nodes. */
+            double distanceBetweenTrees_;
 
             std::vector<float> obstacle_point_cloud_;
 
-            // std::shared_ptr<torch::jit::script::Module> encoder_model_;
-            torch::jit::script::Module encoder_model;
-            torch::jit::script::Module mlp_model;
+            /** \brief Set the pointcloud for obstacle 
+                This function interprets the point cloud 
+                data as a sequence of vectors. In other words, 
+                the point cloud follows a format that 
+                resembles [p1x, p1y, p1z, p2x, p2y, p2z, ...].
+            */
+            void setObstaclePointcloud(std::vector<float>& pc);
 
-            std::vector<float> joint_min{1.6056, 1.518, 3.14159, 2.251, 3.14159, 2.16, 3.14159};
-            std::vector<float> joint_max{-1.6056, -1.221,-3.14159, -2.251, -3.14159, -2.16, -3.14159};
+            struct Gaussian {
+                Eigen::VectorXd mean;
+                Eigen::MatrixXd covariance;
+            };
+
+            /** \brief Sample a joint configuration with a gaussian distribution and random generator */
+            Eigen::VectorXd sample_from_gaussian(const Gaussian& gaussian, std::mt19937& gen) {
+                Eigen::MatrixXd L = gaussian.covariance.llt().matrixL();
+
+                std::normal_distribution<> dist(0, 1);
+
+                Eigen::VectorXd z(7);
+                for (int i = 0; i < 7; ++i) {
+                    z(i) = dist(gen);
+                }
+
+                return gaussian.mean + L * z;
+            }
+
+            Eigen::VectorXd sample_from_distribution_sequence(const std::vector<Gaussian>& gaussian_distributions, std::uniform_int_distribution<> dist, std::mt19937& gen) {
+                int random_number = dist(gen);
+                return sample_from_gaussian(gaussian_distributions[random_number], gen);
+            }
+
+            ros::ServiceClient client_;
         };
     }
 }

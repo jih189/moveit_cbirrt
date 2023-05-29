@@ -49,10 +49,11 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/cbirrt.cpp
   src/DLbirrt.cpp
-  src/DLcbirrt.cpp
+  # src/DLcbirrt.cpp
   src/CLazyPRM.cpp
   src/MPNetrrt.cpp
   src/CMPNetrrt.cpp
+  src/CVQMPTrrt.cpp
 )
 
 target_link_libraries(
