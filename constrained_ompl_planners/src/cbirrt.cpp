@@ -41,6 +41,7 @@
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 //#include <ompl/util/String.h>
 #include "constrained_ompl_planners/cbirrt.h"
+#include <fstream>
 
 ompl::geometric::CBIRRT::CBIRRT(const base::SpaceInformationPtr &si, bool addIntermediateStates)
 : base::Planner(si, addIntermediateStates ? "CBIRRTIntermediate" : "CBIRRT")
@@ -257,6 +258,9 @@ ompl::base::PlannerStatus ompl::geometric::CBIRRT::solve(const base::PlannerTerm
     bool startTree = true;
     bool solved = false;
 
+    // prepare to write
+    // std::ofstream outfile("/root/cbirrt.txt");
+
     while (!ptc)
     {
         TreeData &tree = startTree ? tStart_ : tGoal_;
@@ -298,6 +302,12 @@ ompl::base::PlannerStatus ompl::geometric::CBIRRT::solve(const base::PlannerTerm
             sampleValid=si_->isValid(rstate);
             //sampleValid=si_->getStateValidityChecker()->isValid(rstate, validDistance);
         }
+
+        // for(int i = 0; i < si_->getStateDimension(); i++)
+        // {
+        //     outfile << *(si_->getStateSpace()->getValueAddressAtIndex(rstate, i)) << " ";
+        // }
+        // outfile << "\n";
 
 
         GrowState gs = growTree(tree, tgi, rmotion);
@@ -389,6 +399,8 @@ ompl::base::PlannerStatus ompl::geometric::CBIRRT::solve(const base::PlannerTerm
             // }
         }
     }
+
+    // outfile.close();
 
     si_->freeState(tgi.xstate);
     si_->freeState(rstate);

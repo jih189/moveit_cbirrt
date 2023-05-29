@@ -41,6 +41,7 @@
 #include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
 #include <ompl/base/spaces/WrapperStateSpace.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
+#include <fstream>
 
 ompl::geometric::CVQMPTRRT::CVQMPTRRT(const base::SpaceInformationPtr &si, bool addIntermediateStates)
   : base::Planner(si, addIntermediateStates ? "CVQMPTRRTIntermediate" : "CVQMPTRRT")
@@ -224,10 +225,10 @@ ompl::base::PlannerStatus ompl::geometric::CVQMPTRRT::solve(const base::PlannerT
         srv.request.goal_configuration[i] = *(si_->getStateSpace()->getValueAddressAtIndex(goal_state, i));
     }
 
+    
     // need to pass pointcloud as well.
-    if(!obstacle_point_cloud_.size())
+    if(obstacle_point_cloud_.size())
     {
-        // srv.request.obstacle_pointcloud = obstacle_point_cloud_;
         std::copy(obstacle_point_cloud_.begin(), obstacle_point_cloud_.end(), srv.request.obstacle_pointcloud.begin());
     }
 
@@ -292,6 +293,9 @@ ompl::base::PlannerStatus ompl::geometric::CVQMPTRRT::solve(const base::PlannerT
     base::State *rstate = rmotion->state;
     bool solved = false;
 
+    // prepare to write
+    // std::ofstream outfile("/root/cvqmpt.txt");
+
     while (!ptc)
     {
         TreeData &tree = startTree_ ? tStart_ : tGoal_;
@@ -349,6 +353,14 @@ ompl::base::PlannerStatus ompl::geometric::CVQMPTRRT::solve(const base::PlannerT
 
             sampleValid=si_->isValid(rstate);
         }
+
+        // for(int i = 0; i < si_->getStateDimension(); i++)
+        // {
+        //     outfile << *(si_->getStateSpace()->getValueAddressAtIndex(rstate, i)) << " ";
+        // }
+        // outfile << "\n";
+
+        // save the sampled point to file.
 
         GrowState gs = growTree(tree, tgi, rmotion);
 
@@ -443,6 +455,8 @@ ompl::base::PlannerStatus ompl::geometric::CVQMPTRRT::solve(const base::PlannerT
             }
         }
     }
+
+    // outfile.close();
 
     si_->freeState(tgi.xstate);
     si_->freeState(rstate);

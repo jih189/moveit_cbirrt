@@ -794,11 +794,12 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
         pointcloud.push_back(p.y);
         pointcloud.push_back(p.z);
       }
-      if(planner->getName() == "CMPNETRRT")
+      
+      if(planner->getName().find("CMPNETRRT") != std::string::npos)
       {
         planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
       }
-      else if(planner->getName() == "CVQMPTRRT")
+      else if(planner->getName().find("CVQMPTRRT") != std::string::npos)
       {
         planner->as<ompl::geometric::CVQMPTRRT>()->setObstaclePointcloud(pointcloud);
       }
