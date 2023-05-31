@@ -831,10 +831,10 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
     //     std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
     //   }
     // }
-    else
-    {
-      std::cout << "the number of pointcloud received should be more than 2000" << std::endl;
-    }
+    // else
+    // {
+    //   std::cout << "the number of pointcloud received should be more than 2000" << std::endl;
+    // }
   }
 
 
