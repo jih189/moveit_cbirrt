@@ -776,42 +776,65 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
 
   if(use_point_cloud_)
   {
-    if(request_.obstacle_point_cloud.points.size() >= 2000)
+    std::vector<float> pointcloud;
+    pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
+
+    for(int i = 0; i < request_.obstacle_point_cloud.points.size(); i++) {
+      const geometry_msgs::Point32 p = request_.obstacle_point_cloud.points[i];
+      pointcloud.push_back(p.x);
+      pointcloud.push_back(p.y);
+      pointcloud.push_back(p.z);
+    }
+    
+    if(planner->getName().find("CMPNETRRT") != std::string::npos)
     {
-      std::vector<float> pointcloud;
-      // pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
-      pointcloud.reserve(2000 * 3); // optimize memory allocation
-
-      std::srand(std::time(nullptr)); // use current time as seed for random generator
-      std::vector<int> indices(request_.obstacle_point_cloud.points.size()); // array of indices
-      std::iota(indices.begin(), indices.end(), 0); // Fill with consecutive integers
-      std::random_shuffle(indices.begin(), indices.end()); // Randomly shuffle indices
-
-      // for (const geometry_msgs::Point32& point : request_.obstacle_point_cloud.points) {
-      for(int i = 0; i < 2000; i++) {
-        const geometry_msgs::Point32 p = request_.obstacle_point_cloud.points[indices[i]];
-        pointcloud.push_back(p.x);
-        pointcloud.push_back(p.y);
-        pointcloud.push_back(p.z);
-      }
-      
-      if(planner->getName().find("CMPNETRRT") != std::string::npos)
-      {
-        planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
-      }
-      else if(planner->getName().find("CVQMPTRRT") != std::string::npos)
-      {
-        planner->as<ompl::geometric::CVQMPTRRT>()->setObstaclePointcloud(pointcloud);
-      }
-      else
-      {
-        std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
-      }
+      planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
+    }
+    else if(planner->getName().find("CVQMPTRRT") != std::string::npos)
+    {
+      planner->as<ompl::geometric::CVQMPTRRT>()->setObstaclePointcloud(pointcloud);
     }
     else
     {
-      std::cout << "the number of pointcloud received should be more than 2000" << std::endl;
+      std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
     }
+    
+    // if(request_.obstacle_point_cloud.points.size() >= 2000)
+    // {
+    //   std::vector<float> pointcloud;
+    //   // pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
+    //   pointcloud.reserve(2000 * 3); // optimize memory allocation
+
+    //   std::srand(std::time(nullptr)); // use current time as seed for random generator
+    //   std::vector<int> indices(request_.obstacle_point_cloud.points.size()); // array of indices
+    //   std::iota(indices.begin(), indices.end(), 0); // Fill with consecutive integers
+    //   std::random_shuffle(indices.begin(), indices.end()); // Randomly shuffle indices
+
+    //   // for (const geometry_msgs::Point32& point : request_.obstacle_point_cloud.points) {
+    //   for(int i = 0; i < 2000; i++) {
+    //     const geometry_msgs::Point32 p = request_.obstacle_point_cloud.points[indices[i]];
+    //     pointcloud.push_back(p.x);
+    //     pointcloud.push_back(p.y);
+    //     pointcloud.push_back(p.z);
+    //   }
+      
+    //   if(planner->getName().find("CMPNETRRT") != std::string::npos)
+    //   {
+    //     planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
+    //   }
+    //   else if(planner->getName().find("CVQMPTRRT") != std::string::npos)
+    //   {
+    //     planner->as<ompl::geometric::CVQMPTRRT>()->setObstaclePointcloud(pointcloud);
+    //   }
+    //   else
+    //   {
+    //     std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
+    //   }
+    // }
+    // else
+    // {
+    //   std::cout << "the number of pointcloud received should be more than 2000" << std::endl;
+    // }
   }
 
 

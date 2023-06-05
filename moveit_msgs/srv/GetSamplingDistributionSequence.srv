@@ -1,5 +1,5 @@
 float64[7] start_configuration
 float64[7] goal_configuration
-float32[6000] obstacle_pointcloud
+float32[] obstacle_pointcloud
 ---
 SamplingDistribution[] distribution_sequence
