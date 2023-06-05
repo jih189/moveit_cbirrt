@@ -60,7 +60,7 @@ class MoveGroupCommander(object):
     """
 
     def __init__(
-        self, name, robot_description="robot_description", ns="", wait_for_servers=5.0
+        self, name, robot_description="robot_description", ns="", wait_for_servers=20.0
     ):
         """Specify the group name for which to construct this commander instance. Throws an exception if there is an initialization error."""
         self._g = _moveit_move_group_interface.MoveGroupInterface(
