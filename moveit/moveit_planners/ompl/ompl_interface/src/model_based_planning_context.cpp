@@ -779,7 +779,7 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
     std::vector<float> pointcloud;
     pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
 
-    for(int i = 0; i < request_.obstacle_point_cloud.points.size(); i++) {
+    for(unsigned int i = 0; i < request_.obstacle_point_cloud.points.size(); i++) {
       const geometry_msgs::Point32 p = request_.obstacle_point_cloud.points[i];
       pointcloud.push_back(p.x);
       pointcloud.push_back(p.y);
