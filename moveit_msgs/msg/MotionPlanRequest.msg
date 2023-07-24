@@ -65,5 +65,8 @@ int32 action_id
 # obstacle waypoints. This is the pointcloud used to represent obstacle. We can use it in deep learning based method. If you do not use that, then keep it empty.
 sensor_msgs/PointCloud obstacle_point_cloud
 
+# distributions. This is a list of gaussian distribution used as prior information for sampling
+SamplingDistribution[] distribution_sequence
+
 # if this flag is set to true, then it will clean all planning context before planning.
 bool cleanPlanningContext

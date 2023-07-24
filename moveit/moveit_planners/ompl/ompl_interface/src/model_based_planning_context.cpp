@@ -71,9 +71,10 @@
 #include "ompl/base/objectives/StateCostIntegralObjective.h"
 #include "ompl/base/objectives/MaximizeMinClearanceObjective.h"
 #include <ompl/geometric/planners/prm/LazyPRM.h>
-#include <constrained_ompl_planners/CLazyPRM.h>
+// #include <constrained_ompl_planners/CLazyPRM.h>
 #include <constrained_ompl_planners/CMPNetrrt.h>
 #include <constrained_ompl_planners/CVQMPTrrt.h>
+#include <constrained_ompl_planners/CDistributionrrt.h>
 
 #include <ompl/base/PlannerData.h>
 #include <ompl/base/PlannerDataGraph.h>
@@ -724,6 +725,49 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
     
   startSampling();
   ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->resetMotionCounter();
+
+
+  if(use_distribution_ && request_.distribution_sequence.size() != 0)// check the size of distribution sequence, if it is zero, then skip
+  {
+    std::vector<Eigen::VectorXd> distribution_means;
+    std::vector<Eigen::MatrixXd> distribution_covariances;
+    
+    distribution_means.reserve(request_.distribution_sequence.size());
+    distribution_covariances.reserve(request_.distribution_sequence.size());
+
+    for(unsigned int i = 0; i < request_.distribution_sequence.size(); i++)
+    {
+      const moveit_msgs::SamplingDistribution distribution = request_.distribution_sequence[i];
+
+      Eigen::VectorXd mean(distribution.distribution_mean.size());
+      Eigen::MatrixXd covariance(distribution.distribution_mean.size(), distribution.distribution_mean.size());
+
+      for(unsigned int j = 0; j < distribution.distribution_mean.size(); j++)
+      {
+        mean(j) = distribution.distribution_mean[j];
+      }
+
+      for(unsigned int j = 0; j < distribution.distribution_mean.size(); j++)
+      {
+        for(unsigned int k = 0; k < distribution.distribution_mean.size(); k++)
+        {
+          covariance(j, k) = distribution.distribution_convariance[j * distribution.distribution_mean.size() + k];
+        }
+      }
+
+      distribution_means.push_back(mean);
+      distribution_covariances.push_back(covariance);
+    }
+
+    if(planner->getName().find("CDISTRIBUTIONRRT") != std::string::npos)
+    {
+      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances);
+    }
+    else
+    {
+      std::cout << planner->getName() << " planner must be register here to run set distribution!!" << std::endl;
+    }
+  }
 
   if(use_point_cloud_)
   {
