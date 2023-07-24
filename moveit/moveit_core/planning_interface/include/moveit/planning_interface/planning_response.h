@@ -63,13 +63,6 @@ struct MotionPlanResponse
   robot_trajectory::RobotTrajectoryPtr trajectory_;
   double planning_time_;
   moveit_msgs::MoveItErrorCodes error_code_;
-
-  // jiaming add the verified motion as the experience used later
-  std::vector<MotionEdge> motion_edges;
-  //std::vector<sensor_msgs::JointState> verified_vertex_1_;
-  //std::vector<sensor_msgs::JointState> verified_vertex_2_;
-  //std::vector<int> verified_vertex_id_1_;
-  //std::vector<int> verified_vertex_id_2_;
 };
 
 struct MotionPlanDetailedResponse

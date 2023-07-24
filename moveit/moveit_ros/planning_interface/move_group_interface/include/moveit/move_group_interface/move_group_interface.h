@@ -719,11 +719,6 @@ public:
       target. No execution is performed. The resulting plan is stored in \e plan */
   moveit::core::MoveItErrorCode plan(Plan& plan);
 
-  /** \brief Compute a motion plan that takes the group declared in the constructor from the current state to the
-     specified target. No execution is performed. The resulting plan is stored in \e plan. Besides this, the planning
-     experience is saved in experience. */
-//   moveit::core::MoveItErrorCode plan(Plan& plan, std::vector<MotionEdge>& experience);
-
   /** \brief Given a \e plan, execute it without waiting for completion. */
   moveit::core::MoveItErrorCode asyncExecute(const Plan& plan);
 
@@ -1021,19 +1016,11 @@ public:
   /** \brief Reset the action */
   void clearAction();
 
-  /** \brief Add experience waypoints as the hint for planning*/
-  //void setExperience(const std::vector<trajectory_msgs::JointTrajectoryPoint>& experience_waypoints);
-
   /** \brief Add the obstacle as pointcloud for deep learning based planning */
   void setObstaclePointcloud(const sensor_msgs::PointCloud& obstacle_point_cloud);
 
   /** \brief Reset obstacle pointcloud*/
   void clearObstaclePointcloud();
-
-  /** \brief Reset experience waypoints */
-  // void clearExperience();
-
-  /**@}*/
 
 protected:
   /** return the full RobotState of the joint-space target, only for internal use */

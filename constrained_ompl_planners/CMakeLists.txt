@@ -54,6 +54,7 @@ add_library(${PROJECT_NAME}
   src/MPNetrrt.cpp
   src/CMPNetrrt.cpp
   src/CVQMPTrrt.cpp
+  src/CDistributionrrt.cpp
 )
 
 target_link_libraries(

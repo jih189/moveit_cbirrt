@@ -86,8 +86,7 @@ protected:
                     moveit_msgs::RobotTrajectory& trajectory_msg) const;
   void convertToMsg(const std::vector<plan_execution::ExecutableTrajectory>& trajectory,
                     moveit_msgs::RobotState& first_state_msg, moveit_msgs::RobotTrajectory& trajectory_msg) const;
-  void saveExperienceToMsg(const std::vector<planning_interface::MotionEdge>& motion_edges, moveit_msgs::VerifiedMotion& verified_motion) const;
-
+  
   planning_interface::MotionPlanRequest
   clearRequestStartState(const planning_interface::MotionPlanRequest& request) const;
   moveit_msgs::PlanningScene clearSceneRobotState(const moveit_msgs::PlanningScene& scene) const;

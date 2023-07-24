@@ -205,7 +205,6 @@ void MoveGroupMoveAction::executeMoveCallbackPlanOnly(const moveit_msgs::MoveGro
   convertToMsg(res.trajectory_, action_res.trajectory_start, action_res.planned_trajectory);
   action_res.error_code = res.error_code_;
   action_res.planning_time = res.planning_time_;
-  saveExperienceToMsg(res.motion_edges, action_res.verified_motion);
 }
 
 bool MoveGroupMoveAction::planUsingPlanningPipeline(const planning_interface::MotionPlanRequest& req,

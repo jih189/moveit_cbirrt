@@ -107,8 +107,8 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   , simplify_solutions_(true)
   , interpolate_(true)
   , hybridize_(true)
-  , include_experience_(false)
   , use_point_cloud_(false)
+  , use_distribution_(false)
 {
   complete_initial_robot_state_.update();
 
@@ -374,19 +374,19 @@ void ompl_interface::ModelBasedPlanningContext::useConfig()
     cfg.erase(it);
   }
 
-  // check whether the planner should return experience
-  it = cfg.find("include_experience");
-  if (it != cfg.end())
-  {
-    include_experience_ = boost::lexical_cast<bool>(it->second);
-    cfg.erase(it);
-  }
-
-  // check whether the planner should return experience
+  // check whether the planner should use pointcloud
   it = cfg.find("use_point_cloud");
   if (it != cfg.end())
   {
     use_point_cloud_ = boost::lexical_cast<bool>(it->second);
+    cfg.erase(it);
+  }
+
+  // check whether the planner should use distribution
+  it = cfg.find("use_distribution");
+  if (it != cfg.end())
+  {
+    use_distribution_ = boost::lexical_cast<bool>(it->second);
     cfg.erase(it);
   }
 
@@ -488,49 +488,6 @@ void ompl_interface::ModelBasedPlanningContext::interpolateSolution()
     }
   }
 }
-
-// void ompl_interface::ModelBasedPlanningContext::getExperience(planning_interface::MotionPlanResponse& res)
-// {
-//     ompl::base::PlannerData data(ompl_simple_setup_->getSpaceInformation());
-//     ompl_simple_setup_->getPlannerData(data);
-
-//     ompl::base::PlannerData::Graph::Type& graph = data.toBoostGraph();
-//     boost::property_map<ompl::base::PlannerData::Graph, boost::vertex_index_t>::type indexPro(boost::get(boost::vertex_index_t(), graph));
-
-//     res.motion_edges.resize(data.numEdges());
-
-//     moveit::core::RobotState rs1 = complete_initial_robot_state_;
-//     moveit::core::RobotState rs2 = complete_initial_robot_state_;
-//     std::vector<std::string> joint_names = spec_.state_space_->getJointModelGroup()->getJointModelNames();
-
-
-//     int count = 0;
-//     foreach (const boost::graph_traits<ompl::base::PlannerData::Graph>::edge_descriptor e, boost::edges(graph))
-//     {
-//       // get the edge points states
-//       const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v1 = boost::source(e, graph);
-//       const boost::graph_traits<ompl::base::PlannerData::Graph>::vertex_descriptor v2 = boost::target(e, graph);
-//       const ompl::base::State *st1 = data.getVertex(indexPro[v1]).getState();
-//       const ompl::base::State *st2 = data.getVertex(indexPro[v2]).getState();
-//       // get the state id of edge points
-//             res.motion_edges[count].verified_vertex_id_1_ = indexPro[v1];
-//             res.motion_edges[count].verified_vertex_id_2_ = indexPro[v2];
-
-//       // convert the ompl state to moveit robot state
-//       spec_.state_space_->copyToRobotState(rs1, st1);
-//       spec_.state_space_->copyToRobotState(rs2, st2);
-
-//       // set the joint names with their values
-//       for(std::string joint_name: spec_.state_space_->getJointModelGroup()->getJointModelNames())
-//       {
-//           res.motion_edges[count].verified_vertex_1_.name.push_back(joint_name);
-//           res.motion_edges[count].verified_vertex_2_.name.push_back(joint_name);
-//           res.motion_edges[count].verified_vertex_1_.position.push_back(rs1.getVariablePosition(joint_name));
-//           res.motion_edges[count].verified_vertex_2_.position.push_back(rs2.getVariablePosition(joint_name));
-//       }
-//       count++;
-//     }
-// }
 
 void ompl_interface::ModelBasedPlanningContext::convertPath(const ompl::geometric::PathGeometric& pg,
                                                             robot_trajectory::RobotTrajectory& traj) const
@@ -768,12 +725,6 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   startSampling();
   ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->resetMotionCounter();
 
-  // need to load the planner and the add the experience waypoint to the planner if there is.
-  // if(multi_query_planning_enabled_)
-  // {
-  //   if(ompl_planner_data_->numVertices() > 0) // if there is planner data, we need to load it to the planner
-  //     planner->as<ompl::geometric::CLazyPRM>()->loadPlannerGraph(*ompl_planner_data_);
-
   if(use_point_cloud_)
   {
     std::vector<float> pointcloud;
@@ -799,59 +750,7 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
       std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
     }
     
-    // if(request_.obstacle_point_cloud.points.size() >= 2000)
-    // {
-    //   std::vector<float> pointcloud;
-    //   // pointcloud.reserve(request_.obstacle_point_cloud.points.size() * 3); // optimize memory allocation
-    //   pointcloud.reserve(2000 * 3); // optimize memory allocation
-
-    //   std::srand(std::time(nullptr)); // use current time as seed for random generator
-    //   std::vector<int> indices(request_.obstacle_point_cloud.points.size()); // array of indices
-    //   std::iota(indices.begin(), indices.end(), 0); // Fill with consecutive integers
-    //   std::random_shuffle(indices.begin(), indices.end()); // Randomly shuffle indices
-
-    //   // for (const geometry_msgs::Point32& point : request_.obstacle_point_cloud.points) {
-    //   for(int i = 0; i < 2000; i++) {
-    //     const geometry_msgs::Point32 p = request_.obstacle_point_cloud.points[indices[i]];
-    //     pointcloud.push_back(p.x);
-    //     pointcloud.push_back(p.y);
-    //     pointcloud.push_back(p.z);
-    //   }
-      
-    //   if(planner->getName().find("CMPNETRRT") != std::string::npos)
-    //   {
-    //     planner->as<ompl::geometric::CMPNETRRT>()->setObstaclePointcloud(pointcloud);
-    //   }
-    //   else if(planner->getName().find("CVQMPTRRT") != std::string::npos)
-    //   {
-    //     planner->as<ompl::geometric::CVQMPTRRT>()->setObstaclePointcloud(pointcloud);
-    //   }
-    //   else
-    //   {
-    //     std::cout << planner->getName() << " planner must be register here to run pointlcoud!!" << std::endl;
-    //   }
-    // }
-    // else
-    // {
-    //   std::cout << "the number of pointcloud received should be more than 2000" << std::endl;
-    // }
   }
-
-
-  //   // if(include_experience_)
-
-  //   //todo debug
-  //   // std::cout << "size of incomming experience waypoints: " << request_.experience_waypoints.size() << std::endl;
-  //   // for(unsigned int i = 0; i < request_.experience_waypoints.size(); i++)
-  //   // {
-  //   //   planner->as<ompl::geometric::CLazyPRM>()->addExperienceWaypoint(std::vector<double>{request_.experience_waypoints[i].positions[0],request_.experience_waypoints[i].positions[1],request_.experience_waypoints[i].positions[2],
-  //   //                                                      request_.experience_waypoints[i].positions[3],request_.experience_waypoints[i].positions[4],request_.experience_waypoints[i].positions[5],
-  //   //                                                      request_.experience_waypoints[i].positions[6]});
-  //   // }
-
-  //   // after load the planner data, we should clear the planner data.
-  //   ompl_planner_data_->clear();
-  // }
 }
 
 void ompl_interface::ModelBasedPlanningContext::postSolve()
@@ -885,12 +784,6 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
 
     if (interpolate_)
       interpolateSolution();
-
-    // // include some experience into the response
-    // if (include_experience_)
-    // {
-    //    getExperience(res);
-    // }
 
     // fill the response
     ROS_DEBUG_NAMED(LOGNAME, "%s: Returning successful solution with %lu states", getName().c_str(),
@@ -944,12 +837,6 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
       res.trajectory_.back() = std::make_shared<robot_trajectory::RobotTrajectory>(getRobotModel(), getGroupName());
       getSolutionPath(*res.trajectory_.back());
     }
-
-    // todo: add getExperience for MotionPlanDetailedResponse
-    //if (include_experience_)
-    //{
-    //  getExperience(res);
-    //}
 
     // fill the response
     ROS_DEBUG_NAMED(LOGNAME, "%s: Returning successful solution with %lu states", getName().c_str(),
