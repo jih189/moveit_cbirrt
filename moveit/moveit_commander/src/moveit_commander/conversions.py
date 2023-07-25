@@ -145,11 +145,12 @@ def distribution_to_list(distributions):
     we assume the length of mean should be 7.
     '''
     distribution_list = []
-    for d in SamplingDistribution:
+
+    for d in distributions:
         for d_value in d.distribution_mean:
             distribution_list.append(d_value)
 
-        for d_value in d.distribution_variance:
+        for d_value in d.distribution_convariance:
             distribution_list.append(d_value)
-            
+
     return distribution_list

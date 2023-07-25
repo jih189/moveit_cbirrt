@@ -790,15 +790,31 @@ class MoveGroupCommander(object):
         """Set the action name and the action manifold id """
         self._g.set_action_with_id(action_name, action_id)
 
+    def clear_action(self):
+        """Clear the action name and the action manifold id """
+        self._g.clear_action()
+
     def set_in_hand_pose(self, in_hand_pose):
         """Set the object pose in hand so the object will be the new end-effector which the constraint is applied on """
         self._g.set_in_hand_pose(conversions.pose_to_list(in_hand_pose))
+
+    def clear_in_hand_pose(self):
+        """Clear the object pose in hand so the object will not be the new end-effector which the constraint is applied on """
+        self._g.clear_in_hand_pose()
 
     def set_obstacle_point_cloud(self, obstacle_point_cloud):
         """Set the obstacle pointcloud """
         # need to convert pointcloud into list
         self._g.set_obstacle_point_cloud(conversions.pointcloud_to_list(obstacle_point_cloud))
 
+    def clear_obstacle_point_cloud(self):
+        """Clear the obstacle pointcloud """
+        self._g.clear_obstacle_point_cloud()
+
     def set_distribution(self, distribution):
         """Set the distribution of the object """
         self._g.set_distribution(conversions.distribution_to_list(distribution))
+
+    def clear_distribution(self):
+        """Clear the distribution of the object """
+        self._g.clear_distribution()

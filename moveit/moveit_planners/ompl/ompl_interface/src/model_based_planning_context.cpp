@@ -110,6 +110,7 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   , hybridize_(true)
   , use_point_cloud_(false)
   , use_distribution_(false)
+  , sample_ratio_(0.8)
 {
   complete_initial_robot_state_.update();
 
@@ -388,6 +389,19 @@ void ompl_interface::ModelBasedPlanningContext::useConfig()
   if (it != cfg.end())
   {
     use_distribution_ = boost::lexical_cast<bool>(it->second);
+    cfg.erase(it);
+  }
+
+  // check whether the planner should use sample ratio
+  it = cfg.find("sample_ratio");
+  if (it != cfg.end())
+  {
+    sample_ratio_ = boost::lexical_cast<double>(it->second);
+    // if sample_ratio_ is not in (0, 1], set it to 0.8
+    if (sample_ratio_ <= 0 || sample_ratio_ > 1)
+    {
+      sample_ratio_ = 0.8;
+    }
     cfg.erase(it);
   }
 
@@ -761,7 +775,7 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
 
     if(planner->getName().find("CDISTRIBUTIONRRT") != std::string::npos)
     {
-      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances);
+      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances, sample_ratio_);
     }
     else
     {

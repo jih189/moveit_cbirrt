@@ -107,7 +107,8 @@ namespace ompl
                 use gaussian distribution as prior for generating samples.
             */
             void setDistribution(std::vector<Eigen::VectorXd>& means, 
-                            std::vector<Eigen::MatrixXd>& covariances);
+                            std::vector<Eigen::MatrixXd>& covariances,
+                            double sample_ratio);
 
             /** \brief Set a different nearest neighbors datastructure */
             template <template <typename T> class NN>
@@ -208,6 +209,7 @@ namespace ompl
             };
 
             std::vector<Gaussian> gaussian_distributions_;
+            double sample_ratio_;
 
             /** \brief Sample a joint configuration with a gaussian distribution and random generator */
             Eigen::VectorXd sample_from_gaussian(const Gaussian& gaussian, std::mt19937& gen) {

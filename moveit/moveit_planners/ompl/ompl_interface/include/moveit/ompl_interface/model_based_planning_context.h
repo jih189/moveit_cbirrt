@@ -473,5 +473,8 @@ protected:
 
   // if true, the planner will use the distribution
   bool use_distribution_;
+
+  // if use_distribution_ is true, then we sample from the distribution with this ratio
+  double sample_ratio_;
 };
 }  // namespace ompl_interface

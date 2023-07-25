@@ -235,6 +235,7 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
     OMPL_INFORM("%s: Starting planning with %d states already in datastructure", getName().c_str(),
                 (int)(tStart_->size() + tGoal_->size()));
+                
 
     // initialize all random generator
     std::random_device rd;
@@ -280,13 +281,22 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
         if(gaussian_distributions_.size() != 0)
         {
-            // sample random state based on distribution sequence
-            Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
-            // set the joint value
-            for(int i = 0; i < si_->getStateDimension(); i++)
-                rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
-            // project it to constraints
-            si_->getStateSpace()->as<base::ProjectedStateSpace>()->getConstraint()->project(rstate);
+            // if random number is less than sample ratio, then sample from distribution sequence
+            if(((double) rand() / (RAND_MAX)) < sample_ratio_)
+            {
+                // sample random state based on distribution sequence
+                Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
+  
+                // set the joint value
+                for(int i = 0; i < si_->getStateDimension(); i++)
+                    rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
+                // project it to constraints
+                si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate);
+
+                // if this is not wrapperstatespace, then you should use this one.
+                // for(int i = 0; i < si_->getStateDimension(); i++)
+                //     rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];    
+            }
         }
 
         bool sampleValid=si_->isValid(rstate);
@@ -296,15 +306,23 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
             if(gaussian_distributions_.size() != 0)
             {
-                // sample random state based on distribution sequence
-                Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
-                // set the joint value
-                for(int i = 0; i < si_->getStateDimension(); i++)
-                    rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
-                // project it to constraints
-                si_->getStateSpace()->as<base::ProjectedStateSpace>()->getConstraint()->project(rstate);
-            }
+                // if random number is less than sample ratio, then sample from distribution sequence
+                if(((double) rand() / (RAND_MAX)) < sample_ratio_)
+                {
+                    // sample random state based on distribution sequence
+                    Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
+                    
+                    // set the joint value
+                    for(int i = 0; i < si_->getStateDimension(); i++)
+                        rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
+                    
+                    // project it to constraints
+                    si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate);
 
+                    // for(int i = 0; i < si_->getStateDimension(); i++)
+                    //     rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];    
+                }
+            }
             sampleValid=si_->isValid(rstate);
         }
 
@@ -470,7 +488,7 @@ void ompl::geometric::CDISTRIBUTIONRRT::getPlannerData(base::PlannerData &data) 
 }
 
 void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::VectorXd>& means, 
-                            std::vector<Eigen::MatrixXd>& covariances)
+                            std::vector<Eigen::MatrixXd>& covariances, double sample_ratio)
 {
     // check whether the length of both means and convariances are equal.
     if(means.size() != covariances.size())
@@ -500,6 +518,13 @@ void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::Vecto
         return;
     }
 
+    // check whether the sample ratio is valid
+    if(sample_ratio < 0 || sample_ratio > 1)
+    {
+        OMPL_ERROR("The sample ratio is not valid.");
+        return;
+    }
+
     // set the distribution.
     gaussian_distributions_.clear();
     for(int i = 0; i < means.size(); i++)
@@ -509,4 +534,7 @@ void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::Vecto
         g.covariance = covariances[i];
         gaussian_distributions_.push_back(g);
     }
+
+    // set the sample ratio
+    sample_ratio_ = sample_ratio;
 }
