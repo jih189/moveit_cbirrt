@@ -1091,6 +1091,11 @@ public:
       request.obstacle_point_cloud = obstacle_point_cloud_;
     }
 
+    if(distribution_.size())
+    {
+      request.distribution_sequence = distribution_;
+    }
+
     if (active_target_ == JOINT)
     {
       request.goal_constraints.resize(1);
@@ -1342,6 +1347,16 @@ public:
     obstacle_point_cloud_.points.clear();
   }
 
+  void setDistribution(const std::vector<moveit_msgs::SamplingDistribution>& distribution)
+  {
+    distribution_ = distribution;
+  }
+
+  void clearDistribution()
+  {
+    distribution_.clear();
+  }
+
 private:
   void initializeConstraintsStorageThread(const std::string& host, unsigned int port)
   {
@@ -1425,6 +1440,7 @@ private:
   int action_id_;
   bool is_cleanPlanningContext_;
   sensor_msgs::PointCloud obstacle_point_cloud_;
+  std::vector<moveit_msgs::SamplingDistribution> distribution_;
 };
 
 MoveGroupInterface::MoveGroupInterface(const std::string& group_name, const std::shared_ptr<tf2_ros::Buffer>& tf_buffer,
@@ -2471,6 +2487,16 @@ void MoveGroupInterface::setObstaclePointcloud(const sensor_msgs::PointCloud& ob
 void MoveGroupInterface::clearObstaclePointcloud()
 {
   impl_->clearObstaclePointcloud();
+}
+
+void MoveGroupInterface::setDistribution(const std::vector<moveit_msgs::SamplingDistribution>& distribution)
+{
+  impl_->setDistribution(distribution);
+}
+
+void MoveGroupInterface::clearDistribution()
+{
+  impl_->clearDistribution();
 }
 
 }  // namespace planning_interface

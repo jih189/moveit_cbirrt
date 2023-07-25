@@ -1022,6 +1022,12 @@ public:
   /** \brief Reset obstacle pointcloud*/
   void clearObstaclePointcloud();
 
+  /** \brief Add the distribution as prior information for sampling */
+  void setDistribution(const std::vector<moveit_msgs::SamplingDistribution>& distribution);
+
+  /** \brief Reset the distribution */
+  void clearDistribution();
+
 protected:
   /** return the full RobotState of the joint-space target, only for internal use */
   const moveit::core::RobotState& getTargetRobotState() const;

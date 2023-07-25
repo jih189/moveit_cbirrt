@@ -41,6 +41,7 @@ except ImportError:
 
 from .exception import MoveItCommanderException
 from geometry_msgs.msg import Pose, PoseStamped, Transform
+from moveit_msgs.msg import SamplingDistribution
 import rospy
 import tf
 
@@ -127,9 +128,28 @@ def list_to_transform(trf_list):
     return trf_msg
 
 def pointcloud_to_list(pointcloud):
+    '''
+    Convert the pointcloud to a list. The format should be [x1, y1, z1, x2, y2, z2, ...]
+    '''
     pointcloud_list = []
     for p in pointcloud.points:
         pointcloud_list.append(p.x)
         pointcloud_list.append(p.y)
         pointcloud_list.append(p.z)
     return pointcloud_list
+
+def distribution_to_list(distributions):
+    '''
+    In this function, we convert the SamplingDistribution message to a list. The format
+    should be [distribution1_mean, distribution1_variance, distribution2_mean, distribution2_variance, ...]
+    we assume the length of mean should be 7.
+    '''
+    distribution_list = []
+    for d in SamplingDistribution:
+        for d_value in d.distribution_mean:
+            distribution_list.append(d_value)
+
+        for d_value in d.distribution_variance:
+            distribution_list.append(d_value)
+            
+    return distribution_list

@@ -705,6 +705,31 @@ public:
     }
     setObstaclePointcloud(obstacle_point_cloud);
   }
+
+  void setDistributionPython(bp::list& distribution_list)
+  {
+    // we assume the length of the mean should be 7.
+    unsigned int lengthOfMean = 7;
+    unsigned int size_of_distribution = lengthOfMean + lengthOfMean * lengthOfMean;
+    std::vector<double> v = py_bindings_tools::doubleFromList(distribution_list);
+
+    std::vector<moveit_msgs::SamplingDistribution> distributions;
+    
+    for(unsigned int i = 0; i < v.size() / size_of_distribution; i++)
+    {
+      moveit_msgs::SamplingDistribution distribution;
+      for(unsigned int j = 0; j < lengthOfMean; j++)
+      {
+        distribution.distribution_mean[j] = v[i * size_of_distribution + j];
+      }
+      for(unsigned int j = 0; j < lengthOfMean * lengthOfMean; j++)
+      {
+        distribution.distribution_convariance[j] = v[i * size_of_distribution + lengthOfMean + j];
+      }
+      distributions.push_back(distribution);
+    }
+    setDistribution(distributions);
+  }
 };
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(getJacobianMatrixOverloads, getJacobianMatrixPython, 1, 2)
@@ -866,6 +891,8 @@ static void wrap_move_group_interface()
   move_group_interface_class.def("clear_in_hand_pose", &MoveGroupInterfaceWrapper::clearInHandPose);
   move_group_interface_class.def("set_obstacle_point_cloud", &MoveGroupInterfaceWrapper::setObstaclePointcloudPython);
   move_group_interface_class.def("clear_obstacle_point_cloud", &MoveGroupInterfaceWrapper::clearObstaclePointcloud);
+  move_group_interface_class.def("set_distribution", &MoveGroupInterfaceWrapper::setDistributionPython);
+  move_group_interface_class.def("clear_distribution", &MoveGroupInterfaceWrapper::clearDistribution);
 }
 }  // namespace planning_interface
 }  // namespace moveit

@@ -798,3 +798,7 @@ class MoveGroupCommander(object):
         """Set the obstacle pointcloud """
         # need to convert pointcloud into list
         self._g.set_obstacle_point_cloud(conversions.pointcloud_to_list(obstacle_point_cloud))
+
+    def set_distribution(self, distribution):
+        """Set the distribution of the object """
+        self._g.set_distribution(conversions.distribution_to_list(distribution))
