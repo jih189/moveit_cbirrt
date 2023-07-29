@@ -16,4 +16,4 @@ float64 planning_time
 MoveItErrorCodes error_code
 
 # Verifed Motion
-VerifiedMotion verified_motion
+VerifiedMotions verified_motions

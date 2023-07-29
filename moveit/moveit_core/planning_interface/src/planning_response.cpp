@@ -47,6 +47,19 @@ void planning_interface::MotionPlanResponse::getMessage(moveit_msgs::MotionPlanR
     trajectory_->getRobotTrajectoryMsg(msg.trajectory);
     msg.group_name = trajectory_->getGroupName();
   }
+
+  if(sampled_states_.size() > 0)
+  {
+    moveit_msgs::VerifiedMotions verified_motions_data;
+    for(unsigned int i = 0; i < sampled_states_.size(); i++)
+    {
+      moveit_msgs::VerifiedMotion verified_motion;
+      moveit::core::robotStateToRobotStateMsg(sampled_states_[i], verified_motion.sampled_state);
+      verified_motion.sampled_state_tag = sampled_states_tags_[i];
+      verified_motions_data.verified_motions.push_back(verified_motion);
+    }
+    msg.verified_motions = verified_motions_data;
+  }
 }
 
 void planning_interface::MotionPlanDetailedResponse::getMessage(moveit_msgs::MotionPlanDetailedResponse& msg) const

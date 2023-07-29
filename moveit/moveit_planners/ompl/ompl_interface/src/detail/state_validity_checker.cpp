@@ -67,6 +67,9 @@ ompl_interface::StateValidityChecker::StateValidityChecker(const ModelBasedPlann
 
   collision_request_with_distance_verbose_ = collision_request_with_distance_;
   collision_request_with_distance_verbose_.verbose = true;
+
+  collision_request_with_contacts_ = collision_request_simple_;
+  collision_request_with_contacts_.contacts = true; // Jiaming: this is the key to get the contact map, you may need to remove this later.
 }
 
 void ompl_interface::StateValidityChecker::setVerbose(bool flag)
@@ -261,8 +264,13 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
 bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* wrapped_state, double& dist,
                                                       bool verbose) const
 {
-  verbose = true;
-  dist = 100;
+  /*
+    dist case:
+    -1: state outside bounds or collision detected.
+    -2: state violates path constraints.
+    -3: state is infeasible. This should be ignored later.
+    -4: state causes the manipulated object to collide with the environment.
+  */
   assert(wrapped_state != nullptr);
   // Unwrap the state from a ConstrainedStateSpace::StateType
   auto state = wrapped_state->as<ompl::base::ConstrainedStateSpace::StateType>()->getState();
@@ -278,7 +286,7 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
   // do not use the unwrapped state here, as satisfiesBounds expects a state of type ConstrainedStateSpace::StateType
   if (!si_->satisfiesBounds(wrapped_state))  // si_ = ompl::base::SpaceInformation
   {
-    dist = -2;
+    dist = -1;
     ROS_DEBUG_NAMED(LOGNAME, "State outside bounds");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid(0.0);
     return false;
@@ -292,10 +300,8 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
   const kinematic_constraints::KinematicConstraintSetPtr& kset = planning_context_->getPathConstraints();
   if (kset && !kset->decide(*robot_state, verbose).satisfied)
   {
-    //if(kset)
-      //dist = kset->decide(*robot_state, verbose).distance;
     if(kset)
-      dist = kset->decide(*robot_state, verbose).distance;
+      dist = -2;
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     return false;
   }
@@ -309,10 +315,38 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
 
   // check collision avoidance
   collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(
-      verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
-  dist = res.distance;
-  dist = -4;
-  return !res.collision;
+  planning_context_->getPlanningScene()->checkCollision(collision_request_with_contacts_ , res, *robot_state);
+  // planning_context_->getPlanningScene()->checkCollision(
+  //     verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
+  // dist = res.distance;
+  // dist = -4;
+
+  if(res.collision)
+  {
+    // get all names of the links
+    std::vector<std::string> link_names = robot_state->getRobotModel()->getLinkModelNames();
+
+    // print the contact map
+    for(auto it = res.contacts.begin(); it != res.contacts.end(); ++it)
+    {
+      // check if the key is in the link_names. If both contact links are not in the link_names, 
+      // then it is a collision between the manipulated object and environment.
+      if(std::find(link_names.begin(), link_names.end(), it->first.first) == link_names.end() &&
+         std::find(link_names.begin(), link_names.end(), it->first.second) == link_names.end())
+      {
+        dist = -4;
+      }
+      else
+      {
+        dist = -1;
+      }
+    }
+    return true;
+  }
+  else
+  {
+    dist = 0;
+    return false;
+  }
 }
 

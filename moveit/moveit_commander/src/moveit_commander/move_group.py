@@ -39,6 +39,8 @@ from moveit_msgs.msg import (
     PlaceLocation,
     Constraints,
     RobotState,
+    VerifiedMotion, 
+    VerifiedMotions
 )
 from moveit_msgs.msg import (
     MoveItErrorCodes,
@@ -620,16 +622,18 @@ class MoveGroupCommander(object):
             except MoveItCommanderException:
                 self.set_joint_value_target(joints)
 
-        (error_code_msg, trajectory_msg, planning_time) = self._g.plan()
+        (error_code_msg, trajectory_msg, planning_time, sampled_data) = self._g.plan()
 
         error_code = MoveItErrorCodes()
         error_code.deserialize(error_code_msg)
         plan = RobotTrajectory()
+        verified_motions = VerifiedMotions()
         return (
             error_code.val == MoveItErrorCodes.SUCCESS,
             plan.deserialize(trajectory_msg),
             planning_time,
             error_code,
+            verified_motions.deserialize(sampled_data)
         )
 
     def construct_motion_plan_request(self):

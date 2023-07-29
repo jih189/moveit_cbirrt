@@ -205,6 +205,19 @@ void MoveGroupMoveAction::executeMoveCallbackPlanOnly(const moveit_msgs::MoveGro
   convertToMsg(res.trajectory_, action_res.trajectory_start, action_res.planned_trajectory);
   action_res.error_code = res.error_code_;
   action_res.planning_time = res.planning_time_;
+
+  // jiaming: include the sampled states in the response
+
+  moveit_msgs::VerifiedMotions verified_motions_data;
+
+  for(unsigned int i = 0; i < res.sampled_states_.size(); i++)
+  {
+    moveit_msgs::VerifiedMotion verified_motion;
+    convertToMsg(res.sampled_states_[i], verified_motion.sampled_state);
+    verified_motion.sampled_state_tag = res.sampled_states_tags_[i];
+    verified_motions_data.verified_motions.push_back(verified_motion); 
+  }
+  action_res.verified_motions = verified_motions_data;
 }
 
 bool MoveGroupMoveAction::planUsingPlanningPipeline(const planning_interface::MotionPlanRequest& req,

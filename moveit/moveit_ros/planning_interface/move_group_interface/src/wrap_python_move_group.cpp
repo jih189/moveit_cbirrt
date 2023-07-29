@@ -477,8 +477,10 @@ public:
       GILReleaser gr;
       res = MoveGroupInterface::plan(plan);
     }
+    // return bp::make_tuple(py_bindings_tools::serializeMsg(res), py_bindings_tools::serializeMsg(plan.trajectory_),
+    //                       plan.planning_time_);
     return bp::make_tuple(py_bindings_tools::serializeMsg(res), py_bindings_tools::serializeMsg(plan.trajectory_),
-                          plan.planning_time_);
+                          plan.planning_time_, py_bindings_tools::serializeMsg(plan.verified_motions_data_));
   }
 
   py_bindings_tools::ByteString constructMotionPlanRequestPython()

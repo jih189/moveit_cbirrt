@@ -211,6 +211,8 @@ namespace ompl
             std::vector<Gaussian> gaussian_distributions_;
             double sample_ratio_;
 
+            std::vector<std::pair<base::State *, int>> sampling_data_;
+
             /** \brief Sample a joint configuration with a gaussian distribution and random generator */
             Eigen::VectorXd sample_from_gaussian(const Gaussian& gaussian, std::mt19937& gen) {
                 Eigen::MatrixXd L = gaussian.covariance.llt().matrixL();

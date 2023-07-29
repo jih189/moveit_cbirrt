@@ -40,17 +40,12 @@
 #include <moveit_msgs/MoveItErrorCodes.h>
 #include <moveit_msgs/MotionPlanResponse.h>
 #include <moveit_msgs/MotionPlanDetailedResponse.h>
-#include <sensor_msgs/JointState.h>
+// #include <sensor_msgs/JointState.h>
+#include <moveit_msgs/VerifiedMotion.h>
+#include <moveit_msgs/VerifiedMotions.h>
 
 namespace planning_interface
 {
-struct MotionEdge
-{
-  sensor_msgs::JointState verified_vertex_1_;
-  sensor_msgs::JointState verified_vertex_2_;
-  int verified_vertex_id_1_;
-  int verified_vertex_id_2_;
-};
 
 struct MotionPlanResponse
 {
@@ -63,6 +58,10 @@ struct MotionPlanResponse
   robot_trajectory::RobotTrajectoryPtr trajectory_;
   double planning_time_;
   moveit_msgs::MoveItErrorCodes error_code_;
+
+  // include sampling data
+  std::vector<moveit::core::RobotState> sampled_states_;
+  std::vector<int> sampled_states_tags_;
 };
 
 struct MotionPlanDetailedResponse

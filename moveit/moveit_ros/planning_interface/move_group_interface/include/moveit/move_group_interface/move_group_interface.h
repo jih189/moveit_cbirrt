@@ -110,14 +110,8 @@ public:
 
     /// The amount of time it took to generate the plan
     double planning_time_;
-  };
 
-  struct MotionEdge
-  {
-    sensor_msgs::JointState verified_vertex_1_;
-    sensor_msgs::JointState verified_vertex_2_;
-    int verified_vertex_id_1_;
-    int verified_vertex_id_2_;
+    moveit_msgs::VerifiedMotions verified_motions_data_;
   };
 
   /**

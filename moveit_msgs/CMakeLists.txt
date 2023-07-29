@@ -58,6 +58,7 @@ RobotState.msg
 RobotTrajectory.msg
 SamplingDistribution.msg
 VerifiedMotion.msg
+VerifiedMotions.msg
 VisibilityConstraint.msg
 WorkspaceParameters.msg
 KinematicSolverInfo.msg

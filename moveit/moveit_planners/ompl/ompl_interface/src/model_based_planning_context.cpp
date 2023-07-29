@@ -115,7 +115,7 @@ ompl_interface::ModelBasedPlanningContext::ModelBasedPlanningContext(const std::
   complete_initial_robot_state_.update();
 
   constraints_library_ = std::make_shared<ConstraintsLibrary>(this);
-  // ompl_planner_data_ =  std::make_shared<ompl::base::PlannerData>(ompl_simple_setup_->getSpaceInformation());
+  ompl_planner_data_ =  std::make_shared<ompl::base::PlannerData>(ompl_simple_setup_->getSpaceInformation());
 }
 
 void ompl_interface::ModelBasedPlanningContext::configure(const ros::NodeHandle& nh, bool use_constraints_approximations)
@@ -827,6 +827,22 @@ void ompl_interface::ModelBasedPlanningContext::postSolve()
   // {
   //   ompl_simple_setup_->getPlannerData(*ompl_planner_data_);
   // }
+
+  if(use_distribution_)
+  {
+    // if the planner read distribution, then we assume it should return sampling data for later planning.
+    ompl_planner_data_->clear();
+    ompl_simple_setup_->getPlannerData(*ompl_planner_data_);
+
+    // moveit::core::RobotState ks = complete_initial_robot_state_;
+    
+    // for(unsigned int i = 0; i < ompl_planner_data_->numVertices(); i++)
+    // {
+    //   spec_.state_space_->copyToRobotState(ks, ompl_planner_data_->getVertex(i).getState());
+    //   // ks.printStatePositions(std::cout);
+    //   // std::cout << "tag vaule: " << ompl_planner_data_->getVertex(i).getTag() << std::endl;
+    // }
+  }
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
@@ -850,6 +866,18 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
     res.trajectory_ = std::make_shared<robot_trajectory::RobotTrajectory>(getRobotModel(), getGroupName());
     getSolutionPath(*res.trajectory_);
     res.planning_time_ = ptime;
+
+    // load the planner data into the response
+    res.sampled_states_.clear();
+    res.sampled_states_tags_.clear();
+    for(unsigned int i = 0; i < ompl_planner_data_->numVertices(); i++)
+    {
+      moveit::core::RobotState ks = complete_initial_robot_state_;
+      spec_.state_space_->copyToRobotState(ks, ompl_planner_data_->getVertex(i).getState());
+      res.sampled_states_.push_back(ks);
+      res.sampled_states_tags_.push_back(ompl_planner_data_->getVertex(i).getTag());
+    }
+
     return true;
   }
   else

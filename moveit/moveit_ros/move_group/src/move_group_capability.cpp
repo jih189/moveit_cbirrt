@@ -91,6 +91,12 @@ void move_group::MoveGroupCapability::convertToMsg(const std::vector<plan_execut
     convertToMsg(trajectory[0].trajectory_, first_state_msg, trajectory_msg);
 }
 
+void move_group::MoveGroupCapability::convertToMsg(const moveit::core::RobotState &state, 
+                                                   moveit_msgs::RobotState& state_msg) const
+{
+  moveit::core::robotStateToRobotStateMsg(state, state_msg);
+}
+
 planning_interface::MotionPlanRequest
 move_group::MoveGroupCapability::clearRequestStartState(const planning_interface::MotionPlanRequest& request) const
 {

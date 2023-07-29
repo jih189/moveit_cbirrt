@@ -242,6 +242,11 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dist(0, gaussian_distributions_.size() - 1);
 
+    // clear sampling data
+    for(std::pair<base::State *, int> &data : sampling_data_)
+        si_->freeState(data.first);
+    sampling_data_.clear();
+
     TreeGrowingInfo tgi;
     tgi.xstate = si_->allocState();
 
@@ -299,7 +304,19 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
             }
         }
 
-        bool sampleValid=si_->isValid(rstate);
+        // bool sampleValid=si_->isValid(rstate);
+
+        double invalid_reason;
+        bool sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+        /*
+            dist case:
+            0: state is valid.
+            -1: state outside bounds or collision detected.
+            -2: state violates path constraints.
+            -3: state is infeasible. This should be ignored later.
+            -4: state causes the manipulated object to collide with the environment.
+        */
+        sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
 
         while(!sampleValid){
             sampler_->sampleUniform(rstate); // need to call this for converting the statespace to constrained state space.
@@ -323,7 +340,10 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
                     //     rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];    
                 }
             }
-            sampleValid=si_->isValid(rstate);
+            // sampleValid=si_->isValid(rstate);
+            invalid_reason = 0;
+            sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+            sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
         }
 
         GrowState gs = growTree(tree, tgi, rmotion);
@@ -449,42 +469,11 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
 void ompl::geometric::CDISTRIBUTIONRRT::getPlannerData(base::PlannerData &data) const
 {
+    // jiaming: we want to use planner data to keep all sampling data information.
     Planner::getPlannerData(data);
 
-    std::vector<Motion *> motions;
-    if (tStart_)
-        tStart_->list(motions);
-
-    for (auto &motion : motions)
-    {
-        if (motion->parent == nullptr)
-            data.addStartVertex(base::PlannerDataVertex(motion->state, 1));
-        else
-        {
-            data.addEdge(base::PlannerDataVertex(motion->parent->state, 1), base::PlannerDataVertex(motion->state, 1));
-        }
-    }
-
-    motions.clear();
-    if (tGoal_)
-        tGoal_->list(motions);
-
-    for (auto &motion : motions)
-    {
-        if (motion->parent == nullptr)
-            data.addGoalVertex(base::PlannerDataVertex(motion->state, 2));
-        else
-        {
-            // The edges in the goal tree are reversed to be consistent with start tree
-            data.addEdge(base::PlannerDataVertex(motion->state, 2), base::PlannerDataVertex(motion->parent->state, 2));
-        }
-    }
-
-    // Add the edge connecting the two trees
-    data.addEdge(data.vertexIndex(connectionPoint_.first), data.vertexIndex(connectionPoint_.second));
-
-    // Add some info.
-    data.properties["approx goal distance REAL"] = ompl::toString(distanceBetweenTrees_);
+    for(auto &data_pair : sampling_data_)
+        data.addVertex(base::PlannerDataVertex(data_pair.first, data_pair.second));
 }
 
 void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::VectorXd>& means, 

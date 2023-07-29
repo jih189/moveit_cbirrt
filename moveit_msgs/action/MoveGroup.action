@@ -22,7 +22,7 @@ moveit_msgs/RobotTrajectory executed_trajectory
 float64 planning_time
 
 # Verified Motion
-VerifiedMotion verified_motion
+VerifiedMotions verified_motions
 
 ---
 

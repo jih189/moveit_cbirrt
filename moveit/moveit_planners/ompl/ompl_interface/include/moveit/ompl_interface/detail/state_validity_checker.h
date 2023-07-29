@@ -83,6 +83,7 @@ protected:
   collision_detection::CollisionRequest collision_request_with_distance_;
   collision_detection::CollisionRequest collision_request_simple_verbose_;
   collision_detection::CollisionRequest collision_request_with_distance_verbose_;
+  collision_detection::CollisionRequest collision_request_with_contacts_;
 
   collision_detection::CollisionRequest collision_request_with_cost_;
   bool verbose_;
