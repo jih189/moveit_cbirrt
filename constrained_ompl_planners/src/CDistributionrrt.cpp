@@ -340,10 +340,13 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
                     //     rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];    
                 }
             }
-            // sampleValid=si_->isValid(rstate);
-            invalid_reason = 0;
-            sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-            sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+            sampleValid=si_->isValid(rstate);
+            // we want to keep more valid samples.
+            if (sampleValid)
+                sampling_data_.push_back(std::pair<base::State *, int>(si_->cloneState(rstate), 0));
+            // invalid_reason = 0;
+            // sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+            // sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
         }
 
         GrowState gs = growTree(tree, tgi, rmotion);
