@@ -540,6 +540,30 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
 	  std::cout << checkmatrix(1,0) << " " << checkmatrix(1,1) << " " << checkmatrix(1,2) << " " << checkmatrix(1,3) << std::endl;
 	  std::cout << checkmatrix(2,0) << " " << checkmatrix(2,1) << " " << checkmatrix(2,2) << " " << checkmatrix(2,3) << std::endl;
 	  std::cout << checkmatrix(3,0) << " " << checkmatrix(3,1) << " " << checkmatrix(3,2) << " " << checkmatrix(3,3) << std::endl;
+  
+    // // print offset_
+    // std::cout << "offset_" << std::endl;
+    // std::cout << offset_(0) << " " << offset_(1) << " " << offset_(2) << std::endl;
+
+    // // print pt
+    // std::cout << "pt" << std::endl;
+    // std::cout << pt(0) << " " << pt(1) << " " << pt(2) << std::endl;
+
+    // for (std::size_t i = 0; i < constraint_region_.size(); ++i){
+    //   Eigen::Isometry3d constraint_pose = state.getFrameTransform(constraint_frame_id_) * constraint_region_pose_[i];
+    //   std::cout << "reference pose" << std::endl;
+    //   std::cout << constraint_pose(0,0) << " " << constraint_pose(0,1) << " " << constraint_pose(0,2) << " " << constraint_pose(0,3) << std::endl;
+    //   std::cout << constraint_pose(1,0) << " " << constraint_pose(1,1) << " " << constraint_pose(1,2) << " " << constraint_pose(1,3) << std::endl;
+    //   std::cout << constraint_pose(2,0) << " " << constraint_pose(2,1) << " " << constraint_pose(2,2) << " " << constraint_pose(2,3) << std::endl;
+    //   std::cout << constraint_pose(3,0) << " " << constraint_pose(3,1) << " " << constraint_pose(3,2) << " " << constraint_pose(3,3) << std::endl;
+    
+    //   Eigen::Isometry3d region_pose = constraint_region_[i]->getPose();
+    //   std::cout << "region pose" << std::endl;
+    //   std::cout << region_pose(0,0) << " " << region_pose(0,1) << " " << region_pose(0,2) << " " << region_pose(0,3) << std::endl;
+    //   std::cout << region_pose(1,0) << " " << region_pose(1,1) << " " << region_pose(1,2) << " " << region_pose(1,3) << std::endl;
+    //   std::cout << region_pose(2,0) << " " << region_pose(2,1) << " " << region_pose(2,2) << " " << region_pose(2,3) << std::endl;
+    //   std::cout << region_pose(3,0) << " " << region_pose(3,1) << " " << region_pose(3,2) << " " << region_pose(3,3) << std::endl;
+    }
   }
   if (mobile_frame_)
   {
@@ -547,17 +571,17 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
     {
       Eigen::Isometry3d tmp = state.getFrameTransform(constraint_frame_id_) * constraint_region_pose_[i];
       bool result = constraint_region_[i]->cloneAt(tmp)->containsPoint(pt, verbose);
-      if(verbose)
-      {
-        std::cout << "dimensions" << std::endl;
-        std::cout << constraint_region_[i]->getDimensions()[0] << " " << constraint_region_[i]->getDimensions()[1] << " " << constraint_region_[i]->getDimensions()[2] << std::endl;
-        std::cout << "reference pose" << std::endl;
-        std::cout << tmp(0,0) << " " << tmp(0,1) << " " << tmp(0,2) << " " << tmp(0,3) << std::endl;
-        std::cout << tmp(1,0) << " " << tmp(1,1) << " " << tmp(1,2) << " " << tmp(1,3) << std::endl;
-        std::cout << tmp(2,0) << " " << tmp(2,1) << " " << tmp(2,2) << " " << tmp(2,3) << std::endl;
-        std::cout << tmp(3,0) << " " << tmp(3,1) << " " << tmp(3,2) << " " << tmp(3,3) << std::endl;
-        std::cout << "result: " << result << "------------------------------------------------------------" << std::endl;
-      }
+      // if(verbose)
+      // {
+      //   std::cout << "dimensions" << std::endl;
+      //   std::cout << constraint_region_[i]->getDimensions()[0] << " " << constraint_region_[i]->getDimensions()[1] << " " << constraint_region_[i]->getDimensions()[2] << std::endl;
+      //   std::cout << "reference pose" << std::endl;
+      //   std::cout << tmp(0,0) << " " << tmp(0,1) << " " << tmp(0,2) << " " << tmp(0,3) << std::endl;
+      //   std::cout << tmp(1,0) << " " << tmp(1,1) << " " << tmp(1,2) << " " << tmp(1,3) << std::endl;
+      //   std::cout << tmp(2,0) << " " << tmp(2,1) << " " << tmp(2,2) << " " << tmp(2,3) << std::endl;
+      //   std::cout << tmp(3,0) << " " << tmp(3,1) << " " << tmp(3,2) << " " << tmp(3,3) << std::endl;
+      //   std::cout << "result: " << result << "------------------------------------------------------------" << std::endl;
+      // }
       Eigen::Isometry3d errorInDesiredFrame = tmp.inverse() * state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
       if (result || (i + 1 == constraint_region_pose_.size())){
         // return finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_, result, verbose);
