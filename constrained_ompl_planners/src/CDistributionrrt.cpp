@@ -318,7 +318,13 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
         */
         sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
 
+        // this while loop may cause the program to be stuck, so we need to add a counter to avoid this.
+        int counter = 0;
+        int max_counter = 1000;
         while(!sampleValid){
+            counter++;
+            if(counter > max_counter)
+                break;
             sampler_->sampleUniform(rstate); // need to call this for converting the statespace to constrained state space.
 
             if(gaussian_distributions_.size() != 0)
@@ -348,6 +354,9 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
             // sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
             // sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
         }
+
+        if(counter > max_counter)
+            continue;
 
         GrowState gs = growTree(tree, tgi, rmotion);
 
