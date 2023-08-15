@@ -882,6 +882,18 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
   }
   else
   {
+    // even no solution, we still need to load the planner data into the response
+    // load the planner data into the response
+    res.sampled_states_.clear();
+    res.sampled_states_tags_.clear();
+    for(unsigned int i = 0; i < ompl_planner_data_->numVertices(); i++)
+    {
+      moveit::core::RobotState ks = complete_initial_robot_state_;
+      spec_.state_space_->copyToRobotState(ks, ompl_planner_data_->getVertex(i).getState());
+      res.sampled_states_.push_back(ks);
+      res.sampled_states_tags_.push_back(ompl_planner_data_->getVertex(i).getTag());
+    }
+    
     ROS_INFO_NAMED(LOGNAME, "Unable to solve the planning problem");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
     return false;

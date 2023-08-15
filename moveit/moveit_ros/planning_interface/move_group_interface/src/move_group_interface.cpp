@@ -822,20 +822,14 @@ public:
     {
       ROS_INFO_STREAM_NAMED(LOGNAME, "MoveGroup action returned early");
     }
+    // jiaming: get the sampled data
+    // print the sampled data
+    plan.verified_motions_data_ = move_action_client_->getResult()->verified_motions;
     if (move_action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
       plan.trajectory_ = move_action_client_->getResult()->planned_trajectory;
       plan.start_state_ = move_action_client_->getResult()->trajectory_start;
       plan.planning_time_ = move_action_client_->getResult()->planning_time;
-
-      // jiaming: get the sampled data
-      plan.verified_motions_data_ = move_action_client_->getResult()->verified_motions;
-      // // print the plan verified motions
-      // for (unsigned int i = 0; i < plan.verified_motions_.size(); i++)
-      // {
-      //   std::cout << "plan.verified_motions_[" << i << "]: " << std::endl;
-      //   std::cout << plan.verified_motions_[i].sampled_state << std::endl;
-      // }
 
       return move_action_client_->getResult()->error_code;
     }
