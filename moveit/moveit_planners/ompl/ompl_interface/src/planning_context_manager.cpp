@@ -337,29 +337,29 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     const planning_interface::PlannerConfigurationSettings& config, const ModelBasedStateSpaceFactoryPtr& factory, 
     const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene)// const
 {
-  std::cout << "--------------------check planner setting-----------------------" << std::endl;
-  std::cout << "planner name: " << config.name << " with " << factory->getType() << std::endl;
-  std::cout << "group name: " << config.group << std::endl;
-  for(auto it = config.config.cbegin(); it != config.config.cend(); ++it)
-  {
-    std::cout << it->first << ": " << it->second << std::endl;
-  }
+  // std::cout << "--------------------check planner setting-----------------------" << std::endl;
+  // std::cout << "planner name: " << config.name << " with " << factory->getType() << std::endl;
+  // std::cout << "group name: " << config.group << std::endl;
+  // for(auto it = config.config.cbegin(); it != config.config.cend(); ++it)
+  // {
+  //   std::cout << it->first << ": " << it->second << std::endl;
+  // }
 
   std::string action_name_id = "[" + req.action_name + "][" + std::to_string(req.action_id) + "]";
-  std::cout << "current action with its id: " << action_name_id << std::endl;
+  // std::cout << "current action with its id: " << action_name_id << std::endl;
 
   if(req.cleanPlanningContext)
   {
     std::unique_lock<std::mutex> slock(cached_contexts_->lock_);
-    std::cout << "need to clean planning context cache" << std::endl;
+    // std::cout << "need to clean planning context cache" << std::endl;
     // delete all planning contexts and relatived planners
     planner_allocator_.deletePlanners();
     cached_contexts_->contexts_.clear();
   }
-  else
-    std::cout << "no need to clean planning context cache. The current planning context number " << cached_contexts_->contexts_.size() << std::endl;
+  // else
+  //   std::cout << "no need to clean planning context cache. The current planning context number " << cached_contexts_->contexts_.size() << std::endl;
 
-  std::cout << "----------------------------------------------------------------" << std::endl;
+  // std::cout << "----------------------------------------------------------------" << std::endl;
   // Check for a cached planning context
   ModelBasedPlanningContextPtr context;
   {
@@ -371,7 +371,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
       for (const ModelBasedPlanningContextPtr& cached_context : cached_contexts->second)
         if (cached_context.unique())
         {
-          std::cout << "***reuse action " << action_name_id << std::endl;
+          // std::cout << "***reuse action " << action_name_id << std::endl;
           ROS_DEBUG_NAMED(LOGNAME, "Reusing cached planning context");
           context = cached_context;
           break;
@@ -383,7 +383,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
   // Create a new planning context
   if (!context)
   {
-    std::cout << "***create new planning context" << std::endl;
+    // std::cout << "***create new planning context" << std::endl;
     ModelBasedStateSpaceSpecification space_spec(robot_model_, config.group);
     ModelBasedPlanningContextSpecification context_spec;
     context_spec.config_ = config.config;

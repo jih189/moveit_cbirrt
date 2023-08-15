@@ -547,17 +547,17 @@ ConstraintEvaluationResult PositionConstraint::decide(const moveit::core::RobotS
     {
       Eigen::Isometry3d tmp = state.getFrameTransform(constraint_frame_id_) * constraint_region_pose_[i];
       bool result = constraint_region_[i]->cloneAt(tmp)->containsPoint(pt, verbose);
-      if(verbose)
-      {
-        std::cout << "dimensions" << std::endl;
-        std::cout << constraint_region_[i]->getDimensions()[0] << " " << constraint_region_[i]->getDimensions()[1] << " " << constraint_region_[i]->getDimensions()[2] << std::endl;
-        std::cout << "reference pose" << std::endl;
-        std::cout << tmp(0,0) << " " << tmp(0,1) << " " << tmp(0,2) << " " << tmp(0,3) << std::endl;
-        std::cout << tmp(1,0) << " " << tmp(1,1) << " " << tmp(1,2) << " " << tmp(1,3) << std::endl;
-        std::cout << tmp(2,0) << " " << tmp(2,1) << " " << tmp(2,2) << " " << tmp(2,3) << std::endl;
-        std::cout << tmp(3,0) << " " << tmp(3,1) << " " << tmp(3,2) << " " << tmp(3,3) << std::endl;
-        std::cout << "result: " << result << "------------------------------------------------------------" << std::endl;
-      }
+      // if(verbose)
+      // {
+      //   std::cout << "dimensions" << std::endl;
+      //   std::cout << constraint_region_[i]->getDimensions()[0] << " " << constraint_region_[i]->getDimensions()[1] << " " << constraint_region_[i]->getDimensions()[2] << std::endl;
+      //   std::cout << "reference pose" << std::endl;
+      //   std::cout << tmp(0,0) << " " << tmp(0,1) << " " << tmp(0,2) << " " << tmp(0,3) << std::endl;
+      //   std::cout << tmp(1,0) << " " << tmp(1,1) << " " << tmp(1,2) << " " << tmp(1,3) << std::endl;
+      //   std::cout << tmp(2,0) << " " << tmp(2,1) << " " << tmp(2,2) << " " << tmp(2,3) << std::endl;
+      //   std::cout << tmp(3,0) << " " << tmp(3,1) << " " << tmp(3,2) << " " << tmp(3,3) << std::endl;
+      //   std::cout << "result: " << result << "------------------------------------------------------------" << std::endl;
+      // }
       Eigen::Isometry3d errorInDesiredFrame = tmp.inverse() * state.getGlobalLinkTransform(link_model_) * in_hand_pose_;
       if (result || (i + 1 == constraint_region_pose_.size())){
         // return finishPositionConstraintDecision(pt, tmp.translation(), link_model_->getName(), constraint_weight_, result, verbose);
