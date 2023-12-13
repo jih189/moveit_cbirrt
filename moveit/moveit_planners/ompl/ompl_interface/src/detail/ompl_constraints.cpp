@@ -315,7 +315,7 @@ void EqualityPositionConstraint::function(const Eigen::Ref<const Eigen::VectorXd
                                           Eigen::Ref<Eigen::VectorXd> out) const
 {
   Eigen::Vector3d error =
-      -1 * target_orientation_.matrix().transpose() * (forwardKinematics(joint_values).translation() - target_position_); // TODO: here may be wrong in MOVEIT code.
+      target_orientation_.matrix().transpose() * (forwardKinematics(joint_values).translation() - target_position_);
 
   for (std::size_t dim = 0; dim < 3; ++dim)
   {
