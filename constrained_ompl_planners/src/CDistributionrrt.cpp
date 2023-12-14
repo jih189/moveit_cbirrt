@@ -282,80 +282,70 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
         }
 
         /* sample random state */
-        sampler_->sampleUniform(rstate); // need to call this for converting the statespace to constrained state space.
-
-        if(gaussian_distributions_.size() != 0)
-        {
-            // if random number is less than sample ratio, then sample from distribution sequence
-            if(((double) rand() / (RAND_MAX)) < sample_ratio_)
-            {
-                // sample random state based on distribution sequence
-                Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
-  
-                // set the joint value
-                for(int i = 0; i < si_->getStateDimension(); i++)
-                    rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
-                // project it to constraints
-                si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate);
-
-                // if this is not wrapperstatespace, then you should use this one.
-                // for(int i = 0; i < si_->getStateDimension(); i++)
-                //     rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];    
-            }
-        }
-
-        // bool sampleValid=si_->isValid(rstate);
-
-        double invalid_reason;
-        bool sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-        /*
-            dist case:
-            0: state is valid.
-            -1: state outside bounds or collision detected.
-            -2: state violates path constraints.
-            -3: state is infeasible. This should be ignored later.
-            -4: state causes the manipulated object to collide with the environment.
+        /* When the state is not compounded state, then you should use following code to assign state.
+        for(int i = 0; i < si_->getStateDimension(); i++)
+            rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
         */
-        sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+        
+        // All the sampled configuration will be saved into the sampling_data_ with status.
+        /*
+            Status cases:
+            0: valid after project.
+            1: invalid due to state outside bounds or collision detect after project.
+            2: invalid due to violates path constraint after project.
+            3: invalid due to infeasible after project. This should be ignored later.
+            4: invalid due to collision caused by the manipulated object after project.
+            ---
+            5: valid before project.
+            6: invalid due to state outside bounds or collision detect before project or sampled from Atlas.
+            7: invalid due to violates path constraint before project or sampled from Atlas.
+            8: invalid due to infeasible before project or sampled from Atlas. This should be ignored later.
+            9: invalid due to collision caused by the manipulated object before project or sampled from Atlas.
+        */
 
         // this while loop may cause the program to be stuck, so we need to add a counter to avoid this.
         int counter = 0;
         int max_counter = 1000;
-        while(!sampleValid){
+        bool sampleValid = false;
+        double invalid_reason = 0;
+
+        //  sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+
+        while(!sampleValid && counter < max_counter){
+
             counter++;
-            if(counter > max_counter)
-                break;
             sampler_->sampleUniform(rstate); // need to call this for converting the statespace to constrained state space.
 
+            // if(gaussian_distributions_.size() != 0 && ((double) rand() / (RAND_MAX)) < sample_ratio_) // if random number is less than sample ratio, then sample from distribution sequence
             if(gaussian_distributions_.size() != 0)
             {
-                // if random number is less than sample ratio, then sample from distribution sequence
-                if(((double) rand() / (RAND_MAX)) < sample_ratio_)
-                {
-                    // sample random state based on distribution sequence
-                    Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
-                    
-                    // set the joint value
-                    for(int i = 0; i < si_->getStateDimension(); i++)
-                        rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
-                    
-                    // project it to constraints
-                    si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate);
+                // sample random state based on distribution sequence
+                Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
+                
+                // set the joint value
+                for(int i = 0; i < si_->getStateDimension(); i++)
+                    rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
 
-                    // for(int i = 0; i < si_->getStateDimension(); i++)
-                    //     rstate->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];    
+                // check validity without project and save it into sampling_data
+                sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+                sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), ((int) -invalid_reason) + 5));
+
+                if(!sampleValid)
+                {
+                    // project rstate to the constraint manifold and save it and its status into the sampling_data
+                    si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate);
+                    sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+                    sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
                 }
             }
-            sampleValid=si_->isValid(rstate);
-            // we want to keep more valid samples.
-            if (sampleValid)
-                sampling_data_.push_back(std::pair<base::State *, int>(si_->cloneState(rstate), 0));
-            // invalid_reason = 0;
-            // sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-            // sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+            else{
+                // sampleUniform returns the projected state.
+                sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+                sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+            }
         }
 
-        if(counter > max_counter)
+        if(!sampleValid)
             continue;
 
         GrowState gs = growTree(tree, tgi, rmotion);
