@@ -252,6 +252,7 @@ ompl_interface::PlanningContextManager::PlanningContextManager(moveit::core::Rob
   cached_contexts_ = std::make_shared<CachedContexts>();
   registerDefaultPlanners();
   registerDefaultStateSpaces();
+  experience_manager_ = std::make_shared<ExperienceManager>(robot_model_);
 }
 
 ompl_interface::PlanningContextManager::~PlanningContextManager() = default;
@@ -596,6 +597,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     context->setPlanningScene(planning_scene);
     context->setMotionPlanRequest(req);
     context->setCompleteInitialState(*start_state);
+    // Jiaming: setup the planning experience hints here.
 
     context->setPlanningVolume(req.workspace_parameters);
     if (!context->setPathConstraints(req.path_constraints, &error_code))

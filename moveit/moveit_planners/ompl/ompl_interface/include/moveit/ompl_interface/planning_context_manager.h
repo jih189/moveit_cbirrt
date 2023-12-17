@@ -38,6 +38,7 @@
 
 #include <moveit/ompl_interface/model_based_planning_context.h>
 #include <moveit/ompl_interface/parameterization/model_based_state_space_factory.h>
+#include <moveit/ompl_interface/experience_manager.h>
 #include <moveit/constraint_samplers/constraint_sampler_manager.h>
 #include <moveit/macros/class_forward.h>
 
@@ -276,6 +277,8 @@ protected:
 
   /// Multi-query planner allocator
   MultiQueryPlannerAllocator planner_allocator_;
+
+  std::shared_ptr<ExperienceManager> experience_manager_;
 
 private:
   MOVEIT_STRUCT_FORWARD(CachedContexts);

@@ -1,0 +1,8 @@
+# A service call to pass valid configurations for constructing Atlas of the roadmap.
+Constraints constraints
+string group_name
+int32 foliation_id
+int32 co_parameter_id
+RobotState default_state
+ConfigurationWithInfo[] list_of_configuration_with_info
+---

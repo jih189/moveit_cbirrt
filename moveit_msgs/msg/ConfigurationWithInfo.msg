@@ -1,0 +1,2 @@
+float32[] joint_configuration
+int32 distribution_id

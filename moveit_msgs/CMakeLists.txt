@@ -63,6 +63,7 @@ VisibilityConstraint.msg
 WorkspaceParameters.msg
 KinematicSolverInfo.msg
 PositionIKRequest.msg
+ConfigurationWithInfo.msg
 )
 
 set(SRV_FILES
@@ -93,6 +94,8 @@ ChangeDriftDimensions.srv
 GetSamplingDistributionSequence.srv
 GetNextStep.srv
 GetJointWithConstraints.srv
+ConstructAtlas.srv
+ResetAtlas.srv
 )
 
 set(ACT_FILES

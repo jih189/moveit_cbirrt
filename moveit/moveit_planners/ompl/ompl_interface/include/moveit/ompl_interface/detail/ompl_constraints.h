@@ -44,6 +44,8 @@
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/macros/class_forward.h>
 #include <moveit_msgs/Constraints.h>
+#include <moveit_msgs/RobotState.h>
+#include <moveit/robot_state/conversions.h>
 #include <moveit/planning_scene/planning_scene.h>
 
 namespace ompl_interface
@@ -459,6 +461,11 @@ ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelCo
                                                 const std::string& group,
                                                 const moveit_msgs::Constraints& constraints,
 						const planning_scene::PlanningSceneConstPtr& planning_scene);
+
+ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelConstPtr& robot_model,
+                                                const std::string& group,
+                                                const moveit_msgs::Constraints& constraints,
+                                                const moveit_msgs::RobotState& default_state_msg);
 
 /** \brief  Return a matrix to convert angular velocity to angle-axis velocity
  *  Based on:

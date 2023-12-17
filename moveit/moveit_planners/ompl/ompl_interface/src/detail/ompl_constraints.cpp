@@ -164,7 +164,8 @@ void BaseConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_val
   const Eigen::MatrixXd robot_jacobian = calcErrorJacobian(joint_values);
   for (std::size_t i = 0; i < bounds_.size(); ++i)
   {
-    out.row(i) = constraint_derivative[i] * robot_jacobian.row(i);
+    // out.row(i) = constraint_derivative[i] * robot_jacobian.row(i);
+    out.row(i) = robot_jacobian.row(i);
   }
 }
 
@@ -337,10 +338,10 @@ void EqualityPositionConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd
   Eigen::MatrixXd jac = target_orientation_.matrix().transpose() * robotGeometricJacobian(joint_values).topRows(3);
   for (std::size_t dim = 0; dim < 3; ++dim)
   {
-    if (is_dim_constrained_.at(dim))
-    {
+    // if (is_dim_constrained_.at(dim))
+    // {
       out.row(dim) = jac.row(dim);  // equality constraint dimension
-    }
+    // }
   }
 }
 
@@ -449,6 +450,62 @@ ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelCo
   {
     auto ori_con = std::make_shared<OrientationConstraint>(robot_model, group, num_dofs);
     ori_con->init(constraints, planning_scene->getCurrentState());
+    ompl_constraints.emplace_back(ori_con);
+  }
+  if (num_pos_con < 1 && num_ori_con < 1)
+  {
+    //RCLCPP_ERROR(LOGGER, "No path constraints found in planning request.");
+    ROS_ERROR_NAMED(LOGNAME, "No path constraints found in planning request.");
+    return nullptr;
+  }
+  return std::make_shared<ompl::base::ConstraintIntersection>(num_dofs, ompl_constraints);
+}
+
+ompl::base::ConstraintPtr createOMPLConstraints(const moveit::core::RobotModelConstPtr& robot_model,
+                                                const std::string& group,
+                                                const moveit_msgs::Constraints& constraints,
+						                                    const moveit_msgs::RobotState& default_state_msg)
+{
+  moveit::core::RobotState default_state(robot_model);
+  moveit::core::robotStateMsgToRobotState(default_state_msg, default_state);
+  // TODO(bostoncleek): does this reach the end w/o a return ?
+
+  const std::size_t num_dofs = robot_model->getJointModelGroup(group)->getVariableCount();
+  const std::size_t num_pos_con = constraints.position_constraints.size();
+  const std::size_t num_ori_con = constraints.orientation_constraints.size();
+  
+  // This factory method contains template code to support position and/or orientation constraints.
+  // If the specified constraints are invalid, a nullptr is returned.
+  std::vector<ompl::base::ConstraintPtr> ompl_constraints;
+  if (num_pos_con > 1)
+  {
+    //RCLCPP_WARN(LOGGER, "Only a single position constraint is supported. Using the first one.");
+    ROS_WARN_NAMED(LOGNAME, "Only a single position constraint is supported. Using the first one.");
+  }
+  if (num_ori_con > 1)
+  {
+    //RCLCPP_WARN(LOGGER, "Only a single orientation constraint is supported. Using the first one.");
+    ROS_WARN_NAMED(LOGNAME, "Only a single orientation constraint is supported. Using the first one.");
+  }
+  if (num_pos_con > 0)
+  {
+    BaseConstraintPtr pos_con;
+    if (constraints.name == "use_equality_constraints")
+    {
+      pos_con = std::make_shared<EqualityPositionConstraint>(robot_model, group, num_dofs);
+    }
+    else
+    {
+      pos_con = std::make_shared<BoxConstraint>(robot_model, group, num_dofs);
+    }
+    pos_con->init(constraints, default_state);
+    ompl_constraints.emplace_back(pos_con);
+  }
+  if (num_ori_con > 0)
+  {
+    auto ori_con = std::make_shared<OrientationConstraint>(robot_model, group, num_dofs);
+    // convert the robot state msg to state
+    ori_con->init(constraints, default_state);
     ompl_constraints.emplace_back(ori_con);
   }
   if (num_pos_con < 1 && num_ori_con < 1)
