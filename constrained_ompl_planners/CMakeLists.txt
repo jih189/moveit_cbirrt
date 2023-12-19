@@ -55,6 +55,8 @@ add_library(${PROJECT_NAME}
   src/CMPNetrrt.cpp
   src/CVQMPTrrt.cpp
   src/CDistributionrrt.cpp
+  src/JiamingAtlasStateSpace.cpp
+  src/JiamingAtlasChart.cpp
 )
 
 target_link_libraries(

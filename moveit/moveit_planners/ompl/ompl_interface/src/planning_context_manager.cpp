@@ -597,7 +597,23 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     context->setPlanningScene(planning_scene);
     context->setMotionPlanRequest(req);
     context->setCompleteInitialState(*start_state);
+
     // Jiaming: setup the planning experience hints here.
+    std::vector<std::tuple<int, int, int>> task_node_ids;
+    std::vector<double> task_node_bias;
+    for(uint c = 0; c < req.distribution_sequence.size(); c++)
+    {
+      task_node_ids.push_back(
+        std::tuple<int, int, int>{
+          req.distribution_sequence[c].foliation_id, 
+          req.distribution_sequence[c].co_parameter_id, 
+          req.distribution_sequence[c].distribution_id
+        }
+      );
+      task_node_bias.push_back(req.distribution_sequence[c].beta_ratio);
+    }
+
+    context->setPlanningHint(experience_manager_->extract_atlas(task_node_ids), task_node_bias);
 
     context->setPlanningVolume(req.workspace_parameters);
     if (!context->setPathConstraints(req.path_constraints, &error_code))

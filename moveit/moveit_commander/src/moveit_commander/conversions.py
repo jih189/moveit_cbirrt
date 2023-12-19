@@ -153,4 +153,12 @@ def distribution_to_list(distributions):
         for d_value in d.distribution_convariance:
             distribution_list.append(d_value)
 
+        if len(d.distribution_mean) * len(d.distribution_mean) != len(d.distribution_convariance):
+            raise("The length of the convariance is not correct based on length of the mean!!!")
+
+        distribution_list.append(d.foliation_id)
+        distribution_list.append(d.co_parameter_id)
+        distribution_list.append(d.distribution_id)
+        distribution_list.append(d.beta_ratio)
+
     return distribution_list

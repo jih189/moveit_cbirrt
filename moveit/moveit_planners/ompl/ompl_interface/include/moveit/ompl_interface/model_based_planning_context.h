@@ -45,6 +45,7 @@
 #include <ompl/tools/multiplan/ParallelPlan.h>
 #include <ompl/base/StateStorage.h>
 #include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
+#include "constrained_ompl_planners/JiamingAtlasStateSpace.h"
 
 #include <geometry_msgs/Point32.h>
 
@@ -254,6 +255,8 @@ public:
   void setPlanningVolume(const moveit_msgs::WorkspaceParameters& wparams);
 
   void setCompleteInitialState(const moveit::core::RobotState& complete_initial_robot_state);
+
+  void setPlanningHint(const std::vector<std::shared_ptr<ob::JiamingAtlasStateSpace>> planning_hint_list, const std::vector<double> planning_bias);
 
   bool setGoalConstraints(const std::vector<moveit_msgs::Constraints>& goal_constraints,
                           const moveit_msgs::Constraints& path_constraints, moveit_msgs::MoveItErrorCodes* error);

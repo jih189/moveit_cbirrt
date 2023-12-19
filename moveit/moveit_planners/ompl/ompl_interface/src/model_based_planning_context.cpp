@@ -624,6 +624,13 @@ void ompl_interface::ModelBasedPlanningContext::setCompleteInitialState(
   complete_initial_robot_state_.update();
 }
 
+void ompl_interface::ModelBasedPlanningContext::setPlanningHint(
+  const std::vector<std::shared_ptr<ob::JiamingAtlasStateSpace>> planning_hint_list, 
+  const std::vector<double> planning_bias)
+{
+
+}
+
 void ompl_interface::ModelBasedPlanningContext::clear()
 {
   if (!multi_query_planning_enabled_)

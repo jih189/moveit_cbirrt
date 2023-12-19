@@ -164,8 +164,8 @@ void BaseConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_val
   const Eigen::MatrixXd robot_jacobian = calcErrorJacobian(joint_values);
   for (std::size_t i = 0; i < bounds_.size(); ++i)
   {
-    // out.row(i) = constraint_derivative[i] * robot_jacobian.row(i);
-    out.row(i) = robot_jacobian.row(i);
+    out.row(i) = constraint_derivative[i] * robot_jacobian.row(i);
+    // out.row(i) = robot_jacobian.row(i);
   }
 }
 
@@ -338,10 +338,10 @@ void EqualityPositionConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd
   Eigen::MatrixXd jac = target_orientation_.matrix().transpose() * robotGeometricJacobian(joint_values).topRows(3);
   for (std::size_t dim = 0; dim < 3; ++dim)
   {
-    // if (is_dim_constrained_.at(dim))
-    // {
+    if (is_dim_constrained_.at(dim))
+    {
       out.row(dim) = jac.row(dim);  // equality constraint dimension
-    // }
+    }
   }
 }
 

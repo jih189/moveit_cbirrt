@@ -53,7 +53,7 @@ bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtl
             space->setBounds(bounds);
 
             space->setup();
-            atlas_database_[tuple_key] = std::make_shared<ob::AtlasStateSpace>(space, ompl_constraint);
+            atlas_database_[tuple_key] = std::make_shared<ob::JiamingAtlasStateSpace>(space, ompl_constraint);
         }
 
         ob::State *state = atlas_database_[tuple_key]->allocState();
@@ -61,7 +61,14 @@ bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtl
         for(size_t j = 0; j < robot_joint_number; j++)
             state->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[j] = req.list_of_configuration_with_info[i].joint_configuration[j];
 
-        atlas_database_.at(tuple_key)->getChart(state->as<ompl::base::AtlasStateSpace::StateType>());
+        // add the state into the Atlas
+        atlas_database_.at(tuple_key)->getChart(state->as<ob::JiamingAtlasStateSpace::StateType>());
+        // try to sample in this AtlasStatespace for debuging
+        // auto sampler = atlas_database_.at(tuple_key)->allocDefaultStateSampler();
+        // ob::State *temp_state = atlas_database_[tuple_key]->allocState();
+        // sampler->sampleUniform(temp_state);
+        // atlas_database_.at(tuple_key)->freeState(temp_state);
+        // break;
     }
     return true;
 }
@@ -76,9 +83,24 @@ bool ExperienceManager::cleanAtlasOfRoadmapService(moveit_msgs::ResetAtlas::Requ
 void ExperienceManager::cleanAtlasDatabase(){
     for(auto& pair: atlas_database_)
     {
-        std::shared_ptr<ob::AtlasStateSpace> state_space = pair.second;
+        std::shared_ptr<ob::JiamingAtlasStateSpace> state_space = pair.second;
         state_space->clear();
     }
     atlas_database_.clear();
+}
+
+std::vector<std::shared_ptr<ob::JiamingAtlasStateSpace>> ExperienceManager::extract_atlas(const std::vector<std::tuple<int, int, int>>& task_node_ids)
+{
+    std::vector<std::shared_ptr<ob::JiamingAtlasStateSpace>> result;
+    for(uint i = 0; i < task_node_ids.size(); i++)
+    {
+        if(atlas_database_.find(task_node_ids[i]) == atlas_database_.end()){
+            result.push_back(nullptr);
+        }
+        else{
+            result.push_back(atlas_database_[task_node_ids[i]]);
+        }
+    }
+    return result;
 }
 }

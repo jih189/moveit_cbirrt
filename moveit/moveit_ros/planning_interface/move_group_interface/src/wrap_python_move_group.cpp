@@ -710,24 +710,33 @@ public:
 
   void setDistributionPython(bp::list& distribution_list)
   {
-    // we assume the length of the mean should be 7.
-    unsigned int lengthOfMean = 7;
-    unsigned int size_of_distribution = lengthOfMean + lengthOfMean * lengthOfMean;
+    uint num_of_joint = getActiveJoints().size();
+    uint length_of_list = bp::len(distribution_list);
+    uint size_of_distribution = num_of_joint + num_of_joint * num_of_joint + 4;
+    if(length_of_list % size_of_distribution != 0)
+      throw std::runtime_error("the length of the distribution list is not proper!");
+
+    uint num_of_distribution = length_of_list / size_of_distribution;
+      
     std::vector<double> v = py_bindings_tools::doubleFromList(distribution_list);
 
     std::vector<moveit_msgs::SamplingDistribution> distributions;
-    
-    for(unsigned int i = 0; i < v.size() / size_of_distribution; i++)
+
+    for(unsigned int i = 0; i < num_of_distribution; i++)
     {
       moveit_msgs::SamplingDistribution distribution;
-      for(unsigned int j = 0; j < lengthOfMean; j++)
+      for(unsigned int j = 0; j < num_of_joint; j++)
       {
-        distribution.distribution_mean[j] = v[i * size_of_distribution + j];
+        distribution.distribution_mean.push_back(v[i * size_of_distribution + j]);
       }
-      for(unsigned int j = 0; j < lengthOfMean * lengthOfMean; j++)
+      for(unsigned int j = 0; j < num_of_joint * num_of_joint; j++)
       {
-        distribution.distribution_convariance[j] = v[i * size_of_distribution + lengthOfMean + j];
+        distribution.distribution_convariance.push_back(v[i * size_of_distribution + num_of_joint + j]);
       }
+      distribution.foliation_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 0];
+      distribution.co_parameter_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 1];
+      distribution.distribution_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 2];
+      distribution.beta_ratio = v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 3];
       distributions.push_back(distribution);
     }
     setDistribution(distributions);
