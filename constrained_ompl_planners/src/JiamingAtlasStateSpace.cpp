@@ -331,6 +331,50 @@ ompl::base::JiamingAtlasChart *ompl::base::JiamingAtlasStateSpace::newChart(cons
     return chart;
 }
 
+ompl::base::JiamingAtlasChart *ompl::base::JiamingAtlasStateSpace::newChart(const StateType *state, const double weight) const
+{
+    JiamingAtlasChart *chart;
+    StateType *cstate = nullptr;
+
+    try
+    {
+        cstate = cloneState(state)->as<StateType>();
+        chart = new JiamingAtlasChart(this, cstate);
+    }
+    catch (ompl::Exception &e)
+    {
+        OMPL_ERROR("ompl::base::JiamingAtlasStateSpace::newChart(): "
+                   "Failed because manifold looks degenerate here.");
+
+        if (cstate != nullptr)
+            freeState(cstate);
+
+        return nullptr;
+    }
+
+    // Ensure all charts respect boundaries of the new one, and vice versa, but
+    // only look at nearby ones (within 2*rho).
+    if (separate_)
+    {
+        std::vector<NNElement> nearbyCharts;
+        chartNN_.nearestR(std::make_pair(cstate, 0), 2 * rho_s_, nearbyCharts);
+
+        for (auto &&near : nearbyCharts)
+        {
+            JiamingAtlasChart *other = charts_[near.second];
+            JiamingAtlasChart::generateHalfspace(other, chart);
+            // no need to update the chart previously.
+            // chartPDF_.update(chartPDF_.getElements()[near.second], chartPDF_.getWeight(chartPDF_.getElements()[near.second]));
+        }
+    }
+
+    chartNN_.add(std::make_pair(cstate, charts_.size()));
+    charts_.push_back(chart);
+    chartPDF_.add(chart, weight);
+
+    return chart;
+}
+
 ompl::base::JiamingAtlasChart *ompl::base::JiamingAtlasStateSpace::sampleChart() const
 {
     if (charts_.empty())
@@ -359,6 +403,28 @@ ompl::base::JiamingAtlasChart *ompl::base::JiamingAtlasStateSpace::getChart(cons
     }
 
     return c;
+}
+
+ompl::base::JiamingAtlasChart *ompl::base::JiamingAtlasStateSpace::getChart(const uint index)
+{
+    if (charts_.empty())
+        throw ompl::Exception("ompl::base::JiamingAtlasStateSpace::getChart(const uint index): "
+                              "Use JiamingAtlasStateSpace::anchorChart() first.");
+
+    if(index >= charts_.size())
+    {
+        throw ompl::Exception("ompl::base::JiamingAtlasStateSpace::getChart(const uint index): "
+                              "The index value is larger than the charts_'s size.");
+    }
+    return charts_[index];
+}
+
+void ompl::base::JiamingAtlasStateSpace::combineChart(const StateType *state, const float weight)
+{
+    JiamingAtlasChart *c= owningChart(state);
+
+    if (c == nullptr)
+        c = newChart(state, weight);
 }
 
 ompl::base::JiamingAtlasChart *ompl::base::JiamingAtlasStateSpace::owningChart(const StateType *state) const

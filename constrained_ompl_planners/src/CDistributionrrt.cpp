@@ -305,11 +305,9 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
         // this while loop may cause the program to be stuck, so we need to add a counter to avoid this.
         int counter = 0;
-        int max_counter = 1000;
+        int max_counter = 300;
         bool sampleValid = false;
         double invalid_reason = 0;
-
-        //  sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
 
         while(!sampleValid && counter < max_counter){
 
@@ -333,9 +331,16 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
                 if(!sampleValid)
                 {
                     // project rstate to the constraint manifold and save it and its status into the sampling_data
-                    si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate);
-                    sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-                    sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+                    if(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate))
+                    {
+                        sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+                        sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+                    }
+                    else
+                    {
+                        // fail to project to manifold
+                        sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), 2));
+                    }
                 }
             }
             else{

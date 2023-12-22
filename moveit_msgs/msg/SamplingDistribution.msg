@@ -4,3 +4,5 @@ int32 foliation_id
 int32 co_parameter_id
 int32 distribution_id
 float64 beta_ratio
+int32[] related_co_parameter_index
+float64[] related_beta_time_similarity_ratio

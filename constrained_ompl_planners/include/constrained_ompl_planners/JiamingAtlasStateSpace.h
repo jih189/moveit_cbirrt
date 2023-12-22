@@ -331,6 +331,12 @@ namespace ompl
              * which should be on the manifold. Returns nullptr upon failure. */
             JiamingAtlasChart *newChart(const StateType *state) const;
 
+            /** \brief Create a new chart for the atlas, centered at \a xorigin,
+             * which should be on the manifold. Returns nullptr upon failure. The weight
+             * here is used to bias the sampling priority on this manifold */
+            JiamingAtlasChart *newChart(const StateType *state, const double weight) const;
+
+
             /** \brief Pick a chart at random. */
             JiamingAtlasChart *sampleChart() const;
 
@@ -344,6 +350,13 @@ namespace ompl
              * state should be on. If \a created is not null, it will be set to
              * true if a new chart is created. */
             JiamingAtlasChart *getChart(const StateType *state, bool force = false, bool *created = nullptr) const;
+
+            /** 
+                Get the chart based on the index.
+            */
+            JiamingAtlasChart* getChart(const uint index);
+
+            void combineChart(const StateType *state, const float weight);
 
             /** @} */
 

@@ -712,33 +712,57 @@ public:
   {
     uint num_of_joint = getActiveJoints().size();
     uint length_of_list = bp::len(distribution_list);
-    uint size_of_distribution = num_of_joint + num_of_joint * num_of_joint + 4;
-    if(length_of_list % size_of_distribution != 0)
-      throw std::runtime_error("the length of the distribution list is not proper!");
-
-    uint num_of_distribution = length_of_list / size_of_distribution;
+    uint current_length = 0;
       
     std::vector<double> v = py_bindings_tools::doubleFromList(distribution_list);
 
     std::vector<moveit_msgs::SamplingDistribution> distributions;
 
-    for(unsigned int i = 0; i < num_of_distribution; i++)
+    while(current_length < length_of_list)
     {
       moveit_msgs::SamplingDistribution distribution;
       for(unsigned int j = 0; j < num_of_joint; j++)
       {
-        distribution.distribution_mean.push_back(v[i * size_of_distribution + j]);
+        distribution.distribution_mean.push_back(v[current_length + j]);
       }
       for(unsigned int j = 0; j < num_of_joint * num_of_joint; j++)
       {
-        distribution.distribution_convariance.push_back(v[i * size_of_distribution + num_of_joint + j]);
+        distribution.distribution_convariance.push_back(v[current_length + num_of_joint + j]);
       }
-      distribution.foliation_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 0];
-      distribution.co_parameter_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 1];
-      distribution.distribution_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 2];
-      distribution.beta_ratio = v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 3];
+      distribution.foliation_id = (int)v[current_length + num_of_joint + num_of_joint * num_of_joint + 0];
+      distribution.co_parameter_id = (int)v[current_length + num_of_joint + num_of_joint * num_of_joint + 1];
+      distribution.distribution_id = (int)v[current_length + num_of_joint + num_of_joint * num_of_joint + 2];
+      distribution.beta_ratio = v[current_length + num_of_joint + num_of_joint * num_of_joint + 3];
+      uint size_of_related_node = (uint)v[current_length + num_of_joint + num_of_joint * num_of_joint + 4];
+      for(unsigned int j = 0; j < size_of_related_node; j++)
+      {
+        distribution.related_co_parameter_index.push_back((int) v[current_length + num_of_joint + num_of_joint * num_of_joint + 5 + j]);
+      }
+      for(unsigned int j = 0; j < size_of_related_node; j++)
+      {
+        distribution.related_beta_time_similarity_ratio.push_back(v[current_length + num_of_joint + num_of_joint * num_of_joint + 5 + size_of_related_node + j]);
+      }
+      current_length += (num_of_joint + num_of_joint * num_of_joint + 5 + 2 * size_of_related_node);
       distributions.push_back(distribution);
     }
+
+    // for(unsigned int i = 0; i < num_of_distribution; i++)
+    // {
+    //   moveit_msgs::SamplingDistribution distribution;
+    //   for(unsigned int j = 0; j < num_of_joint; j++)
+    //   {
+    //     distribution.distribution_mean.push_back(v[i * size_of_distribution + j]);
+    //   }
+    //   for(unsigned int j = 0; j < num_of_joint * num_of_joint; j++)
+    //   {
+    //     distribution.distribution_convariance.push_back(v[i * size_of_distribution + num_of_joint + j]);
+    //   }
+    //   distribution.foliation_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 0];
+    //   distribution.co_parameter_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 1];
+    //   distribution.distribution_id = (int)v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 2];
+    //   distribution.beta_ratio = v[i * size_of_distribution + num_of_joint + num_of_joint * num_of_joint + 3];
+    //   distributions.push_back(distribution);
+    // }
     setDistribution(distributions);
   }
 };
