@@ -33,7 +33,9 @@ public:
     bool constructAtlasOfRoadmapService(moveit_msgs::ConstructAtlas::Request& req, moveit_msgs::ConstructAtlas::Response& res);
     bool cleanAtlasOfRoadmapService(moveit_msgs::ResetAtlas::Request& req, moveit_msgs::ResetAtlas::Response& res);
     void cleanAtlasDatabase();
-    std::tuple<std::shared_ptr<ob::JiamingAtlasStateSpace>, float> extract_atlas(const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>>& task_node_sequence, const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene);
+    std::shared_ptr<ob::JiamingAtlasStateSpace> extract_atlas(
+        const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>>& task_node_sequence, 
+        const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene, float &atlas_distribution_ratio);
 };
 
 }

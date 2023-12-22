@@ -38,9 +38,7 @@
 #include "ompl/base/goals/GoalSampleableRegion.h"
 #include "ompl/tools/config/SelfConfig.h"
 #include "ompl/util/String.h"
-#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
-#include <ompl/base/spaces/WrapperStateSpace.h>
-#include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
+
 #include <fstream>
 
 ompl::geometric::CDISTRIBUTIONRRT::CDISTRIBUTIONRRT(const base::SpaceInformationPtr &si, bool addIntermediateStates)
@@ -484,7 +482,9 @@ void ompl::geometric::CDISTRIBUTIONRRT::getPlannerData(base::PlannerData &data) 
 }
 
 void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::VectorXd>& means, 
-                            std::vector<Eigen::MatrixXd>& covariances, double sample_ratio)
+                            std::vector<Eigen::MatrixXd>& covariances, double sample_ratio,
+                            std::shared_ptr<ompl::base::JiamingAtlasStateSpace> atlas_state_space,
+                            float atlas_distribution_ratio)
 {
     // check whether the length of both means and convariances are equal.
     if(means.size() != covariances.size())
@@ -521,6 +521,9 @@ void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::Vecto
         return;
     }
 
+    std::cout << "------------------------------" << std::endl;
+
+    std::cout << "distribution means: " << std::endl;
     // set the distribution.
     gaussian_distributions_.clear();
     for(int i = 0; i < means.size(); i++)
@@ -529,8 +532,19 @@ void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::Vecto
         g.mean = means[i];
         g.covariance = covariances[i];
         gaussian_distributions_.push_back(g);
+
+        std::cout << means[i].transpose() << std::endl;
     }
 
     // set the sample ratio
     sample_ratio_ = sample_ratio;
+
+    atlas_state_space_ = atlas_state_space;
+    atlas_distribution_ratio_ = atlas_distribution_ratio;
+
+    
+    std::cout << "receive hints" << std::endl;
+    std::cout << "number of charts = " << atlas_state_space_->getChartCount() << std::endl;
+    std::cout << "sampling ratio = " << sample_ratio_ << std::endl;
+    std::cout << "atlas distribution ratio = " << atlas_distribution_ratio << std::endl;
 }

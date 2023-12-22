@@ -625,10 +625,11 @@ void ompl_interface::ModelBasedPlanningContext::setCompleteInitialState(
 }
 
 void ompl_interface::ModelBasedPlanningContext::setPlanningHint(
-  const std::vector<std::shared_ptr<ob::JiamingAtlasStateSpace>> planning_hint_list, 
-  const std::vector<double> planning_bias)
+  const std::shared_ptr<ob::JiamingAtlasStateSpace> planning_hint, 
+  const float planning_bias)
 {
-
+  planning_hint_ = planning_hint;
+  planning_bias_ = planning_bias;
 }
 
 void ompl_interface::ModelBasedPlanningContext::clear()
@@ -782,7 +783,7 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
 
     if(planner->getName().find("CDISTRIBUTIONRRT") != std::string::npos)
     {
-      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances, sample_ratio_);
+      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances, sample_ratio_, planning_hint_, planning_bias_);
     }
     else
     {

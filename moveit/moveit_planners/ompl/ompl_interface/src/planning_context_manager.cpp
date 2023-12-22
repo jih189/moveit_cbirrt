@@ -603,7 +603,6 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     // Jiaming: setup the planning experience hints here.
     // pass the task node sequence to extract related Atlas data from the database.
     std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>> task_node_sequence;
-    std::vector<double> task_node_bias;
     for(uint c = 0; c < req.distribution_sequence.size(); c++)
     {
       std::vector<std::tuple<int, float>> related_task_nodes(req.distribution_sequence[c].related_co_parameter_index.size());
@@ -623,11 +622,10 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
           related_task_nodes
         }
       );
-
-      task_node_bias.push_back(req.distribution_sequence[c].beta_ratio);
     }
-    experience_manager_->extract_atlas(task_node_sequence, req, planning_scene);
-    // context->setPlanningHint(, task_node_bias);
+
+    float atlas_distribution_ratio = 0.0;
+    context->setPlanningHint(experience_manager_->extract_atlas(task_node_sequence, req, planning_scene, atlas_distribution_ratio), atlas_distribution_ratio);
 
     context->setPlanningVolume(req.workspace_parameters);
     if (!context->setPathConstraints(req.path_constraints, &error_code))

@@ -112,10 +112,11 @@ void ExperienceManager::cleanAtlasDatabase(){
     experience_state_space_.reset();
 }
 
-std::tuple<std::shared_ptr<ob::JiamingAtlasStateSpace>, float> ExperienceManager::extract_atlas(
+std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>>& task_node_sequence,
     const moveit_msgs::MotionPlanRequest& req,
-    const planning_scene::PlanningSceneConstPtr& planning_scene)
+    const planning_scene::PlanningSceneConstPtr& planning_scene,
+    float &atlas_distribution_ratio)
 {
     // // create a experience state space which is combined by different Atlas from manifolds.
     ob::ConstraintPtr ompl_constraint = 
@@ -169,23 +170,20 @@ std::tuple<std::shared_ptr<ob::JiamingAtlasStateSpace>, float> ExperienceManager
         return std::get<3>(a) > std::get<3>(b);
     });
 
-    std::cout << "related nodes" << std::endl;
+    // std::cout << "related nodes" << std::endl;
     for(auto n: all_related_nodes)
     {
         std::shared_ptr<ob::JiamingAtlasStateSpace> ss = atlas_database_.at(std::tuple<int, int, int>{std::get<0>(n), std::get<1>(n), std::get<2>(n)});
-        std::cout << "(" << std::get<0>(n) << ", " << std::get<1>(n) << ", " << std::get<2>(n) << ", " << std::get<3>(n) << "), " << std::endl;
-        std::cout << "number of charts = " << atlas_database_.at(std::tuple<int, int, int>{std::get<0>(n), std::get<1>(n), std::get<2>(n)})->getChartCount() << std::endl;
         for(uint chart_index = 0; chart_index < ss->getChartCount(); chart_index++)
         {
-            // experience_state_space->getChart();
-            // ss->printState(ss->getChart(chart_index)->getOrigin(), std::cout);
             experience_state_space_->combineChart(ss->getChart(chart_index)->getOrigin(), (double)std::get<3>(n));
         }
         
     }
 
-    // combine the atlas from different nodes to the new statespace.
-    return std::tuple<std::shared_ptr<ob::JiamingAtlasStateSpace>, float>{experience_state_space_,  (sum / all_related_nodes.size()) ? all_related_nodes.size() : 0.0};
+    atlas_distribution_ratio = (sum / all_related_nodes.size()) ? all_related_nodes.size() : 0.0;
 
+    // combine the atlas from different nodes to the new statespace.
+    return experience_state_space_;
 }
 }

@@ -256,7 +256,7 @@ public:
 
   void setCompleteInitialState(const moveit::core::RobotState& complete_initial_robot_state);
 
-  void setPlanningHint(const std::vector<std::shared_ptr<ob::JiamingAtlasStateSpace>> planning_hint_list, const std::vector<double> planning_bias);
+  void setPlanningHint(const std::shared_ptr<ob::JiamingAtlasStateSpace> planning_hint, const float planning_bias);
 
   bool setGoalConstraints(const std::vector<moveit_msgs::Constraints>& goal_constraints,
                           const moveit_msgs::Constraints& path_constraints, moveit_msgs::MoveItErrorCodes* error);
@@ -408,6 +408,9 @@ protected:
   ModelBasedPlanningContextSpecification spec_;
 
   moveit::core::RobotState complete_initial_robot_state_;
+
+  std::shared_ptr<ob::JiamingAtlasStateSpace> planning_hint_;
+  float planning_bias_;
 
   /// the OMPL planning context; this contains the problem definition and the planner used
   og::SimpleSetupPtr ompl_simple_setup_;

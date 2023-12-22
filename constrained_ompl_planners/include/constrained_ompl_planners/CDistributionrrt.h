@@ -41,6 +41,10 @@
 #include "ompl/geometric/planners/PlannerIncludes.h"
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
+#include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
+#include <ompl/base/spaces/WrapperStateSpace.h>
+#include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
+#include "constrained_ompl_planners/JiamingAtlasStateSpace.h"
 
 #include <Eigen/Dense>
 #include <random>
@@ -108,7 +112,10 @@ namespace ompl
             */
             void setDistribution(std::vector<Eigen::VectorXd>& means, 
                             std::vector<Eigen::MatrixXd>& covariances,
-                            double sample_ratio);
+                            double sample_ratio,
+                            std::shared_ptr<ompl::base::JiamingAtlasStateSpace> atlas_state_space,
+                            float atlas_distribution_ratio
+                            );
 
             /** \brief Set a different nearest neighbors datastructure */
             template <template <typename T> class NN>
@@ -208,8 +215,11 @@ namespace ompl
                 Eigen::MatrixXd covariance;
             };
 
+            // Jiaming: all sampling elements
             std::vector<Gaussian> gaussian_distributions_;
             double sample_ratio_;
+            std::shared_ptr<ompl::base::JiamingAtlasStateSpace> atlas_state_space_;
+            float atlas_distribution_ratio_;
 
             std::vector<std::pair<base::State *, int>> sampling_data_;
 
