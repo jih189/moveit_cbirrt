@@ -150,8 +150,9 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
         for(auto related_node: std::get<3>(node))
         {
             // if the beta time similarity score is too low, the ignore it.
-            // if(std::get<1>(related_node) < 0.1)
-            //     continue;
+            if(std::get<1>(related_node) < 0.1)
+                continue;
+            
             // std::cout << std::get<0>(related_node) << " " << std::get<1>(related_node) << " | ";
             all_related_nodes.push_back(
                 std::tuple<int, int, int, float>{
@@ -181,7 +182,8 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
         
     }
 
-    atlas_distribution_ratio = (sum / all_related_nodes.size()) ? all_related_nodes.size() : 0.0;
+    // if there is no related nodes, then set the atlas distribution ration to be 0.
+    atlas_distribution_ratio = all_related_nodes.size() ? (sum / all_related_nodes.size()) : 0.0;
 
     // combine the atlas from different nodes to the new statespace.
     return experience_state_space_;

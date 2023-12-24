@@ -625,7 +625,8 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
     }
 
     float atlas_distribution_ratio = 0.0;
-    context->setPlanningHint(experience_manager_->extract_atlas(task_node_sequence, req, planning_scene, atlas_distribution_ratio), atlas_distribution_ratio);
+    auto atlas_ss = experience_manager_->extract_atlas(task_node_sequence, req, planning_scene, atlas_distribution_ratio);
+    context->setPlanningHint(atlas_ss, atlas_distribution_ratio);
 
     context->setPlanningVolume(req.workspace_parameters);
     if (!context->setPathConstraints(req.path_constraints, &error_code))

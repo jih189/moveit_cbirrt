@@ -44,6 +44,7 @@
 #include <ompl/base/spaces/constraint/ConstrainedStateSpace.h>
 #include <ompl/base/spaces/WrapperStateSpace.h>
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
+#include "constrained_ompl_planners/JiamingAtlasChart.h"
 #include "constrained_ompl_planners/JiamingAtlasStateSpace.h"
 
 #include <Eigen/Dense>
@@ -220,6 +221,20 @@ namespace ompl
             double sample_ratio_;
             std::shared_ptr<ompl::base::JiamingAtlasStateSpace> atlas_state_space_;
             float atlas_distribution_ratio_;
+
+            Eigen::VectorXd sample_from_atlas()
+            {
+               ompl::base::JiamingAtlasChart* sampled_chart = atlas_state_space_->sampleChart();
+                const std::size_t k = sampled_chart->getManifoldDimension();
+                Eigen::VectorXd ru(k);
+                for (std::size_t i = 0; i < k; ++i)
+                    ru[i] = rng_.gaussian01();
+                ru *= atlas_state_space_->getRho_s() * std::pow(rng_.uniform01(), 1.0 / k) / ru.norm();
+
+                Eigen::VectorXd sample_value(atlas_state_space_->getAmbientDimension());
+                sampled_chart->phi(ru, sample_value);
+                return sample_value;
+            }
 
             std::vector<std::pair<base::State *, int>> sampling_data_;
 

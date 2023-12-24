@@ -213,6 +213,9 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
   // Unwrap the state from a ConstrainedStateSpace::StateType
   auto state = wrapped_state->as<ompl::base::ConstrainedStateSpace::StateType>()->getState();
 
+  // jiaming: force it to clean the knowInformation.
+  const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->clearKnownInformation();
+
   // Usecached validity if it is available
   if (state->as<ModelBasedStateSpace::StateType>()->isValidityKnown())
   {
@@ -263,7 +266,7 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
 
 bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* wrapped_state, double& dist,
                                                       bool verbose) const
-{
+{  
   /*
     dist case:
     -1: state outside bounds or collision detected.
@@ -274,6 +277,9 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
   assert(wrapped_state != nullptr);
   // Unwrap the state from a ConstrainedStateSpace::StateType
   auto state = wrapped_state->as<ompl::base::ConstrainedStateSpace::StateType>()->getState();
+
+  // jiaming: force it to clean the knowInformation.
+  const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->clearKnownInformation();
 
   // Use cached validity and distance if they are available
   if (state->as<ModelBasedStateSpace::StateType>()->isValidityKnown() &&

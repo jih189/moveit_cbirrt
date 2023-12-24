@@ -310,18 +310,16 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
         while(!sampleValid && counter < max_counter){
 
             counter++;
-            sampler_->sampleUniform(rstate); // need to call this for converting the statespace to constrained state space.
 
-            // if(gaussian_distributions_.size() != 0 && ((double) rand() / (RAND_MAX)) < sample_ratio_) // if random number is less than sample ratio, then sample from distribution sequence
-            if(gaussian_distributions_.size() != 0)
+            if(gaussian_distributions_.size() != 0 && ((double) rand() / (RAND_MAX)) < sample_ratio_) // if random number is less than sample ratio, then sample from distribution sequence
             {
-                // sample random state based on distribution sequence
-                Eigen::VectorXd sample_value = sample_from_distribution_sequence(gaussian_distributions_, dist, gen);
-                
+                Eigen::VectorXd sample_value = ((double) rand() / (RAND_MAX)) >= atlas_distribution_ratio_ ? 
+                                        sample_from_distribution_sequence(gaussian_distributions_, dist, gen) : sample_from_atlas();
+
                 // set the joint value
                 for(int i = 0; i < si_->getStateDimension(); i++)
                     rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
-
+                
                 // check validity without project and save it into sampling_data
                 sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
                 sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), ((int) -invalid_reason) + 5));
@@ -342,6 +340,7 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
                 }
             }
             else{
+                sampler_->sampleUniform(rstate);
                 // sampleUniform returns the projected state.
                 sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
                 sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
@@ -521,9 +520,7 @@ void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::Vecto
         return;
     }
 
-    std::cout << "------------------------------" << std::endl;
-
-    std::cout << "distribution means: " << std::endl;
+    std::cout << "receive distributions' mean" << std::endl;
     // set the distribution.
     gaussian_distributions_.clear();
     for(int i = 0; i < means.size(); i++)
@@ -536,14 +533,12 @@ void ompl::geometric::CDISTRIBUTIONRRT::setDistribution(std::vector<Eigen::Vecto
         std::cout << means[i].transpose() << std::endl;
     }
 
-    // set the sample ratio
+    // set the sample parameters.
     sample_ratio_ = sample_ratio;
-
     atlas_state_space_ = atlas_state_space;
     atlas_distribution_ratio_ = atlas_distribution_ratio;
-
     
-    std::cout << "receive hints" << std::endl;
+    std::cout << "Other sampling informations: " << std::endl;
     std::cout << "number of charts = " << atlas_state_space_->getChartCount() << std::endl;
     std::cout << "sampling ratio = " << sample_ratio_ << std::endl;
     std::cout << "atlas distribution ratio = " << atlas_distribution_ratio << std::endl;
