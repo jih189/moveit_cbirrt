@@ -309,41 +309,40 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
         while(!sampleValid && counter < max_counter){
 
+            Eigen::VectorXd sample_value;
             counter++;
 
             if(gaussian_distributions_.size() != 0 && ((double) rand() / (RAND_MAX)) < sample_ratio_) // if random number is less than sample ratio, then sample from distribution sequence
             {
-                Eigen::VectorXd sample_value = ((double) rand() / (RAND_MAX)) >= atlas_distribution_ratio_ ? 
+                sample_value = ((double) rand() / (RAND_MAX)) >= atlas_distribution_ratio_ ? 
                                         sample_from_distribution_sequence(gaussian_distributions_, dist, gen) : sample_from_atlas();
-
-                // set the joint value
-                for(int i = 0; i < si_->getStateDimension(); i++)
-                    rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
-                
-                // check validity without project and save it into sampling_data
-                sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-                sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), ((int) -invalid_reason) + 5));
-
-                if(!sampleValid)
-                {
-                    // project rstate to the constraint manifold and save it and its status into the sampling_data
-                    if(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate))
-                    {
-                        sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-                        sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
-                    }
-                    else
-                    {
-                        // fail to project to manifold
-                        sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), 2));
-                    }
-                }
             }
-            else{
-                sampler_->sampleUniform(rstate);
-                // sampleUniform returns the projected state.
-                sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
-                sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+            else
+            {
+                sample_value = sample_from_random();
+            }
+
+            // set the joint value
+            for(int i = 0; i < si_->getStateDimension(); i++)
+                rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = sample_value[i];
+            
+            // check validity without project and save it into sampling_data
+            sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+            sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), ((int) -invalid_reason) + 5));
+
+            if(!sampleValid)
+            {
+                // project rstate to the constraint manifold and save it and its status into the sampling_data
+                if(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate))
+                {
+                    sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
+                    sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
+                }
+                else
+                {
+                    // fail to project to manifold
+                    sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), 2));
+                }
             }
         }
 
