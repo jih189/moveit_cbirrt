@@ -160,6 +160,10 @@ ompl::base::JiamingAtlasChart::JiamingAtlasChart(const JiamingAtlasStateSpace *a
 
       Eigen::MatrixXd actualJacobianMatrix = removeZeroRows(j);
 
+      // if the actual jacobian matrix is empty, then the tangent space basis will be identity matrix.
+      if(actualJacobianMatrix.rows() == 0)
+        return Eigen::MatrixXd::Identity(n_, n_);
+
       return actualJacobianMatrix.fullPivLu().kernel().householderQr().householderQ() * Eigen::MatrixXd::Identity(n_, n_ - actualJacobianMatrix.rows());
   }())
   , radius_(atlas->getRho_s())

@@ -19,7 +19,8 @@ ExperienceManager::~ExperienceManager()
 bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtlas::Request& req,
                                                   moveit_msgs::ConstructAtlas::Response& res)
 {
-    std::cout << "construct Atlas in manifold (" << req.foliation_id << ", " << req.co_parameter_id << ")" << std::endl;
+    // std::cout << "construct Atlas in manifold (" << req.foliation_id << ", " << req.co_parameter_id << ")" << std::endl;
+    OMPL_INFORM("Construct Atlas in manifold ( %d , %d )", req.foliation_id, req.co_parameter_id);
     // create the ompl constraints
     // req.constraints
     ob::ConstraintPtr ompl_constraint = 
