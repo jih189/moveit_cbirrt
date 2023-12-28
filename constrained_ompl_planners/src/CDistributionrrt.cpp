@@ -330,7 +330,7 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
             sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
             sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), ((int) -invalid_reason) + 5));
 
-            if(!sampleValid)
+            if(!sampleValid && invalid_reason == -2) // if the configuration is invalid due to constraint, then project.
             {
                 // project rstate to the constraint manifold and save it and its status into the sampling_data
                 if(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate))

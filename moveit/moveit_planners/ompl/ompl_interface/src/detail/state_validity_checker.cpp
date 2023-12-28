@@ -289,17 +289,8 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
     return state->as<ModelBasedStateSpace::StateType>()->isMarkedValid();
   }
 
-  // do not use the unwrapped state here, as satisfiesBounds expects a state of type ConstrainedStateSpace::StateType
-  if (!si_->satisfiesBounds(wrapped_state))  // si_ = ompl::base::SpaceInformation
-  {
-    dist = -1;
-    ROS_DEBUG_NAMED(LOGNAME, "State outside bounds");
-    const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid(0.0);
-    return false;
-  }
-
   moveit::core::RobotState* robot_state = tss_.getStateStorage();
-  // do not use the unwrapped state here, as copyToRobotState expects a state of type ConstrainedStateSpace::StateType
+    // do not use the unwrapped state here, as copyToRobotState expects a state of type ConstrainedStateSpace::StateType
   planning_context_->getOMPLStateSpace()->copyToRobotState(*robot_state, wrapped_state);
 
   // check path constraints
@@ -309,6 +300,15 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
     if(kset)
       dist = -2;
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
+    return false;
+  }
+
+  // do not use the unwrapped state here, as satisfiesBounds expects a state of type ConstrainedStateSpace::StateType
+  if (!si_->satisfiesBounds(wrapped_state))  // si_ = ompl::base::SpaceInformation
+  {
+    dist = -1;
+    ROS_DEBUG_NAMED(LOGNAME, "State outside bounds");
+    const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid(0.0);
     return false;
   }
 
