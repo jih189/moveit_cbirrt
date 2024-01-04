@@ -882,7 +882,14 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
     {
       moveit::core::RobotState ks = complete_initial_robot_state_;
       spec_.state_space_->copyToRobotState(ks, ompl_planner_data_->getVertex(i).getState());
-      res.sampled_states_.push_back(ks);
+      // res.sampled_states_.push_back(ks);
+
+      std::vector<float> sampled_data_vector(spec_.state_space_->getDimension());
+
+      for(unsigned int j = 0; j < spec_.state_space_->getDimension(); j++)
+        sampled_data_vector[j] = ks.getVariablePosition(getJointModelGroup()->getVariableIndexList()[j]);
+
+      res.sampled_states_.push_back(sampled_data_vector);
       res.sampled_states_tags_.push_back(ompl_planner_data_->getVertex(i).getTag());
     }
 
@@ -898,7 +905,12 @@ bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::Motion
     {
       moveit::core::RobotState ks = complete_initial_robot_state_;
       spec_.state_space_->copyToRobotState(ks, ompl_planner_data_->getVertex(i).getState());
-      res.sampled_states_.push_back(ks);
+      // res.sampled_states_.push_back(ks);
+      std::vector<float> sampled_data_vector(spec_.state_space_->getDimension());
+      for(unsigned int j = 0; j < spec_.state_space_->getDimension(); j++)
+        sampled_data_vector[j] = ks.getVariablePosition(getJointModelGroup()->getVariableIndexList()[j]);
+      
+      res.sampled_states_.push_back(sampled_data_vector);
       res.sampled_states_tags_.push_back(ompl_planner_data_->getVertex(i).getTag());
     }
     

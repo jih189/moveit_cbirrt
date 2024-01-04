@@ -54,7 +54,12 @@ void planning_interface::MotionPlanResponse::getMessage(moveit_msgs::MotionPlanR
     for(unsigned int i = 0; i < sampled_states_.size(); i++)
     {
       moveit_msgs::VerifiedMotion verified_motion;
-      moveit::core::robotStateToRobotStateMsg(sampled_states_[i], verified_motion.sampled_state);
+      // moveit::core::robotStateToRobotStateMsg(sampled_states_[i], verified_motion.sampled_state);
+      for(unsigned int j = 0; j < sampled_states_[i].size(); j++)
+      {
+        verified_motion.sampled_state.push_back(sampled_states_[i][j]);
+      }
+
       verified_motion.sampled_state_tag = sampled_states_tags_[i];
       verified_motions_data.verified_motions.push_back(verified_motion);
     }

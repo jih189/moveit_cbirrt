@@ -60,7 +60,7 @@ struct MotionPlanResponse
   moveit_msgs::MoveItErrorCodes error_code_;
 
   // include sampling data
-  std::vector<moveit::core::RobotState> sampled_states_;
+  std::vector<std::vector<float>> sampled_states_;
   std::vector<int> sampled_states_tags_;
 };
 

@@ -213,7 +213,11 @@ void MoveGroupMoveAction::executeMoveCallbackPlanOnly(const moveit_msgs::MoveGro
   for(unsigned int i = 0; i < res.sampled_states_.size(); i++)
   {
     moveit_msgs::VerifiedMotion verified_motion;
-    convertToMsg(res.sampled_states_[i], verified_motion.sampled_state);
+    // convertToMsg(res.sampled_states_[i], verified_motion.sampled_state);
+    for(unsigned int j = 0; j < res.sampled_states_[i].size(); j++)
+    {
+       verified_motion.sampled_state.push_back(res.sampled_states_[i][j]);
+    }
     verified_motion.sampled_state_tag = res.sampled_states_tags_[i];
     verified_motions_data.verified_motions.push_back(verified_motion); 
   }
