@@ -11,6 +11,8 @@
 #include "ompl/datastructures/PDF.h"
 #include <moveit/ompl_interface/detail/ompl_constraints.h>
 
+#include <cmath>
+
 namespace ompl_interface
 {
 namespace ob = ompl::base;
@@ -27,6 +29,8 @@ private:
     ros::ServiceServer construct_atlas_of_roadmap_service_;
     ros::ServiceServer clean_atlas_of_roadmap_services_;
 
+    std::vector<float> softmax(const std::vector<float>& input);
+
 public:
     ExperienceManager(moveit::core::RobotModelConstPtr robot_model);
     ~ExperienceManager();
@@ -34,7 +38,7 @@ public:
     bool cleanAtlasOfRoadmapService(moveit_msgs::ResetAtlas::Request& req, moveit_msgs::ResetAtlas::Response& res);
     void cleanAtlasDatabase();
     std::shared_ptr<ob::JiamingAtlasStateSpace> extract_atlas(
-        const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>>& task_node_sequence, 
+        const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>>& task_node_sequence, 
         const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene, float &atlas_distribution_ratio);
 };
 

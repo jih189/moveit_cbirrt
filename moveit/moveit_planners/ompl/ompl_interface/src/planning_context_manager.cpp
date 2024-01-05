@@ -602,20 +602,21 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
 
     // Jiaming: setup the planning experience hints here.
     // pass the task node sequence to extract related Atlas data from the database.
-    std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>> task_node_sequence;
+    std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>> task_node_sequence;
     for(uint c = 0; c < req.distribution_sequence.size(); c++)
     {
-      std::vector<std::tuple<int, float>> related_task_nodes(req.distribution_sequence[c].related_co_parameter_index.size());
+      std::vector<std::tuple<int, float, float>> related_task_nodes(req.distribution_sequence[c].related_co_parameter_index.size());
       for(uint k = 0; k < req.distribution_sequence[c].related_co_parameter_index.size(); k++)
       {
-        related_task_nodes[k] = std::tuple<int, float>{
+        related_task_nodes[k] = std::tuple<int, float, float>{
           req.distribution_sequence[c].related_co_parameter_index[k],
-          req.distribution_sequence[c].related_beta_time_similarity_ratio[k]
+          req.distribution_sequence[c].related_beta[k],
+          req.distribution_sequence[c].related_similarity[k]
         };
       }
 
       task_node_sequence.push_back(
-        std::tuple<int, int, int, std::vector<std::tuple<int, float>>>{
+        std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>{
           req.distribution_sequence[c].foliation_id, 
           req.distribution_sequence[c].co_parameter_id, 
           req.distribution_sequence[c].distribution_id,

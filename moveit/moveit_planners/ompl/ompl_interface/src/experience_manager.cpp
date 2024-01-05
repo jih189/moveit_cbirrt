@@ -113,8 +113,26 @@ void ExperienceManager::cleanAtlasDatabase(){
     experience_state_space_.reset();
 }
 
+std::vector<float> ExperienceManager::softmax(const std::vector<float>& input) {
+    std::vector<float> result;
+    float sum_exp = 0.0;
+
+    // Calculate the sum of exponentials of input elements
+    for (float value : input) {
+        sum_exp += std::exp(value);
+    }
+
+    // Calculate softmax for each element
+    for (float value : input) {
+        float softmax_value = std::exp(value) / sum_exp;
+        result.push_back(softmax_value);
+    }
+
+    return result;
+}
+
 std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
-    const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float>>>>& task_node_sequence,
+    const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>>& task_node_sequence,
     const moveit_msgs::MotionPlanRequest& req,
     const planning_scene::PlanningSceneConstPtr& planning_scene,
     float &atlas_distribution_ratio)
@@ -143,15 +161,17 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
 
     // extract different Atlas from different manifolds
     std::vector<std::tuple<int, int, int, float>> all_related_nodes;
-
-    float sum = 0;
+    std::vector<float> beta_weight;
+    std::vector<float> beta_values;
     
-    for(auto node: task_node_sequence)
+    // The element of task_node_sequence has the format as following
+    // (foliation id, co-paramenter id, distribution id, [(related co-parameter id, related beta, related similarity)])
+    for(auto node: task_node_sequence) // which is a list of task node equence with experience.
     {
         for(auto related_node: std::get<3>(node))
         {
             // if the beta time similarity score is too low, the ignore it.
-            if(std::get<1>(related_node) < 0.1)
+            if(std::get<1>(related_node) * std::get<2>(related_node) < 0.1)
                 continue;
             
             // std::cout << std::get<0>(related_node) << " " << std::get<1>(related_node) << " | ";
@@ -160,10 +180,11 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
                     (int)std::get<0>(node),
                     std::get<0>(related_node),
                     (int)std::get<2>(node),
-                    std::get<1>(related_node)
+                    std::get<1>(related_node) * std::get<2>(related_node)
                 }
             );
-            sum += std::get<1>(related_node);
+            beta_values.push_back(std::get<1>(related_node));
+            beta_weight.push_back(std::get<2>(related_node));
         }
     }
 
@@ -180,11 +201,16 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
         {
             experience_state_space_->combineChart(ss->getChart(chart_index)->getOrigin(), (double)std::get<3>(n));
         }
-        
     }
 
-    // if there is no related nodes, then set the atlas distribution ration to be 0.
-    atlas_distribution_ratio = all_related_nodes.size() ? (sum / all_related_nodes.size()) : 0.0;
+    atlas_distribution_ratio = 0;
+
+    // the atlas-distribution sampling ratio is calculate the element multiplication between soft_max(similarity) and beta.
+    if(beta_weight.size() > 0){
+        std::vector<float> beta_weight_after_soft_max = softmax(beta_weight);
+        for(unsigned int i = 0; i < beta_weight.size(); i++)
+            atlas_distribution_ratio += (beta_weight_after_soft_max[i] * beta_weight[i]);
+    }
 
     // combine the atlas from different nodes to the new statespace.
     return experience_state_space_;

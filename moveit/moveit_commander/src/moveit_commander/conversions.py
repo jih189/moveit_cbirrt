@@ -156,8 +156,8 @@ def distribution_to_list(distributions):
         if len(d.distribution_mean) * len(d.distribution_mean) != len(d.distribution_convariance):
             raise("The length of the convariance is not correct based on length of the mean!!!")
 
-        if len(d.related_co_parameter_index) != len(d.related_beta_time_similarity_ratio):
-            raise("The length of related co-parameter index is not equal to the length of related beta time similarity ratio!!!")
+        if len(d.related_co_parameter_index) != len(d.related_beta) or len(d.related_co_parameter_index) != len(d.related_similarity):
+            raise("The length of related co-parameter index is not equal to the length of related beta or similarity!!!")
 
         distribution_list.append(d.foliation_id)
         distribution_list.append(d.co_parameter_id)
@@ -166,7 +166,9 @@ def distribution_to_list(distributions):
         distribution_list.append(len(d.related_co_parameter_index))
         for i in d.related_co_parameter_index:
             distribution_list.append(i)
-        for r in d.related_beta_time_similarity_ratio:
-            distribution_list.append(r)
+        for rb in d.related_beta:
+            distribution_list.append(rb)
+        for rs in d.related_similarity:
+            distribution_list.append(rs)
 
     return distribution_list

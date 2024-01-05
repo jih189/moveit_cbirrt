@@ -740,9 +740,13 @@ public:
       }
       for(unsigned int j = 0; j < size_of_related_node; j++)
       {
-        distribution.related_beta_time_similarity_ratio.push_back(v[current_length + num_of_joint + num_of_joint * num_of_joint + 5 + size_of_related_node + j]);
+        distribution.related_beta.push_back(v[current_length + num_of_joint + num_of_joint * num_of_joint + 5 + size_of_related_node + j]);
       }
-      current_length += (num_of_joint + num_of_joint * num_of_joint + 5 + 2 * size_of_related_node);
+      for(unsigned int j = 0; j < size_of_related_node; j++)
+      {
+        distribution.related_similarity.push_back(v[current_length + num_of_joint + num_of_joint * num_of_joint + 5 + 2 * size_of_related_node + j]);
+      }
+      current_length += (num_of_joint + num_of_joint * num_of_joint + 5 + 3 * size_of_related_node);
       distributions.push_back(distribution);
     }
 
