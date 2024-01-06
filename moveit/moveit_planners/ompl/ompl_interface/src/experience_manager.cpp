@@ -20,7 +20,7 @@ bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtl
                                                   moveit_msgs::ConstructAtlas::Response& res)
 {
     // std::cout << "construct Atlas in manifold (" << req.foliation_id << ", " << req.co_parameter_id << ")" << std::endl;
-    OMPL_INFORM("Construct Atlas in manifold ( %d , %d )", req.foliation_id, req.co_parameter_id);
+    OMPL_INFORM("Construct Atlas in manifold ( %d , %d ) with %d configurations", req.foliation_id, req.co_parameter_id, req.list_of_configuration_with_info.size());
     // create the ompl constraints
     // req.constraints
     ob::ConstraintPtr ompl_constraint = 
@@ -73,6 +73,8 @@ bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtl
 
             space->setup();
             atlas_database_[tuple_key] = std::make_shared<ob::JiamingAtlasStateSpace>(space, ompl_constraint);
+            atlas_database_[tuple_key]->setEpsilon(0.4);
+            atlas_database_[tuple_key]->setRho(0.4);
         }
 
         ob::State *state = atlas_database_[tuple_key]->allocState();
@@ -93,6 +95,8 @@ bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtl
     // sampler->sampleUniform(temp_state);
     // atlas_temp->freeState(temp_state);
 
+    OMPL_INFORM("Construct Atlas in manifold done.");
+
     return true;
 }
 
@@ -104,13 +108,18 @@ bool ExperienceManager::cleanAtlasOfRoadmapService(moveit_msgs::ResetAtlas::Requ
 }
 
 void ExperienceManager::cleanAtlasDatabase(){
+
+    OMPL_INFORM("Clean Atlas Dataset.");
     for(auto& pair: atlas_database_)
     {
         std::shared_ptr<ob::JiamingAtlasStateSpace> state_space = pair.second;
         state_space->clear();
     }
     atlas_database_.clear();
+    if(experience_state_space_.get() != nullptr)
+        experience_state_space_->clear();
     experience_state_space_.reset();
+    OMPL_INFORM("Clean Atlas Dataset Done.");
 }
 
 std::vector<float> ExperienceManager::softmax(const std::vector<float>& input) {
@@ -157,7 +166,12 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     space->setup();
 
     // reset experience state space
+    if(experience_state_space_.get() != nullptr)
+        experience_state_space_->clear();
+
     experience_state_space_.reset(new ob::JiamingAtlasStateSpace(space, ompl_constraint));
+    experience_state_space_->setEpsilon(0.4);
+    experience_state_space_->setRho(0.4);
 
     // extract different Atlas from different manifolds
     std::vector<std::tuple<int, int, int, float>> all_related_nodes;
