@@ -85,6 +85,9 @@ bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtl
         // add the state into the Atlas
         atlas_database_.at(tuple_key)->getChart(state->as<ob::JiamingAtlasStateSpace::StateType>());
 
+        // this getChart will clone the state so you need to delete this state right away
+        atlas_database_.at(tuple_key)->freeState(state);
+
         // atlas_temp->getChart(state->as<ob::JiamingAtlasStateSpace::StateType>()); //TODO
     }
     
@@ -113,11 +116,9 @@ void ExperienceManager::cleanAtlasDatabase(){
     for(auto& pair: atlas_database_)
     {
         std::shared_ptr<ob::JiamingAtlasStateSpace> state_space = pair.second;
-        state_space->clear();
+        state_space.reset();
     }
     atlas_database_.clear();
-    if(experience_state_space_.get() != nullptr)
-        experience_state_space_->clear();
     experience_state_space_.reset();
     OMPL_INFORM("Clean Atlas Dataset Done.");
 }
@@ -166,9 +167,6 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     space->setup();
 
     // reset experience state space
-    if(experience_state_space_.get() != nullptr)
-        experience_state_space_->clear();
-
     experience_state_space_.reset(new ob::JiamingAtlasStateSpace(space, ompl_constraint));
     experience_state_space_->setEpsilon(0.4);
     experience_state_space_->setRho(0.4);
