@@ -263,7 +263,7 @@ void BoxConstraint::parseConstraintMsg(const moveit_msgs::Constraints& constrain
 
 Eigen::VectorXd BoxConstraint::calcError(const Eigen::Ref<const Eigen::VectorXd>& x) const
 {
-  return -1 * target_orientation_.matrix().transpose() * (forwardKinematics(x).translation() - target_position_);
+  return target_orientation_.matrix().transpose() * (forwardKinematics(x).translation() - target_position_);
 }
 
 Eigen::MatrixXd BoxConstraint::calcErrorJacobian(const Eigen::Ref<const Eigen::VectorXd>& x) const
