@@ -203,6 +203,7 @@ Eigen::MatrixXd BaseConstraint::robotGeometricJacobian(const Eigen::Ref<const Ei
   // return value (success) not used, could return a garbage jacobian.
   robot_state->getJacobian(joint_model_group_, joint_model_group_->getLinkModel(link_name_),
                            Eigen::Vector3d(0.0, 0.0, 0.0), jacobian);
+  return jacobian;
 
   // // [jiaming] calculate the adjoint matrix based on the in_hand_pose_
   // Eigen::MatrixXd p_hat(3,3);
@@ -218,12 +219,12 @@ Eigen::MatrixXd BaseConstraint::robotGeometricJacobian(const Eigen::Ref<const Ei
 
   //---------------------------------------------------------------------------------------------
 
-  Eigen::MatrixXd Jobj(jacobian.rows(), jacobian.cols());  // Jacobian matrix of the object in hand
+  // Eigen::MatrixXd Jobj(jacobian.rows(), jacobian.cols());  // Jacobian matrix of the object in hand
 
-  // Calculate the linear and angular components of Jobj
-  Jobj.block(0, 0, 3, jacobian.cols()) = -in_hand_pose_.linear() * jacobian.block(0, 0, 3, jacobian.cols());
-  Jobj.block(3, 0, 3, jacobian.cols()) = jacobian.block(3, 0, 3, jacobian.cols());
-  return Jobj;
+  // // Calculate the linear and angular components of Jobj
+  // Jobj.block(0, 0, 3, jacobian.cols()) = -in_hand_pose_.linear() * jacobian.block(0, 0, 3, jacobian.cols());
+  // Jobj.block(3, 0, 3, jacobian.cols()) = jacobian.block(3, 0, 3, jacobian.cols());
+  // return Jobj;
 
   //---------------------------------------------------------------------------------------------
 
