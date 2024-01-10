@@ -204,19 +204,52 @@ Eigen::MatrixXd BaseConstraint::robotGeometricJacobian(const Eigen::Ref<const Ei
   robot_state->getJacobian(joint_model_group_, joint_model_group_->getLinkModel(link_name_),
                            Eigen::Vector3d(0.0, 0.0, 0.0), jacobian);
 
-  // [jiaming] calculate the adjoint matrix based on the in_hand_pose_
-  Eigen::MatrixXd p_hat(3,3);
-  p_hat << 0, -in_hand_pose_.translation()(2), in_hand_pose_.translation()(1), 
-	in_hand_pose_.translation()(2), 0, -in_hand_pose_.translation()(0),
-	-in_hand_pose_.translation()(1), in_hand_pose_.translation()(0), 0;
+  // // [jiaming] calculate the adjoint matrix based on the in_hand_pose_
+  // Eigen::MatrixXd p_hat(3,3);
+  // p_hat << 0, -in_hand_pose_.translation()(2), in_hand_pose_.translation()(1), 
+	// in_hand_pose_.translation()(2), 0, -in_hand_pose_.translation()(0),
+	// -in_hand_pose_.translation()(1), in_hand_pose_.translation()(0), 0;
 
-  Eigen::MatrixXd adjoint(6,6);
-  adjoint << in_hand_pose_.rotation().transpose(), -in_hand_pose_.rotation().transpose()*p_hat,
-	     Eigen::Matrix3d::Zero(), in_hand_pose_.rotation().transpose();
+  // Eigen::MatrixXd adjoint(6,6);
+  // adjoint << in_hand_pose_.rotation().transpose(), -in_hand_pose_.rotation().transpose()*p_hat,
+	//      Eigen::Matrix3d::Zero(), in_hand_pose_.rotation().transpose();
 
-  jacobian = adjoint * jacobian;
+  // jacobian = adjoint * jacobian;
 
-  return jacobian;
+  //---------------------------------------------------------------------------------------------
+
+  Eigen::MatrixXd Jobj(jacobian.rows(), jacobian.cols());  // Jacobian matrix of the object in hand
+
+  // Calculate the linear and angular components of Jobj
+  Jobj.block(0, 0, 3, jacobian.cols()) = -in_hand_pose_.linear() * jacobian.block(0, 0, 3, jacobian.cols());
+  Jobj.block(3, 0, 3, jacobian.cols()) = jacobian.block(3, 0, 3, jacobian.cols());
+  return Jobj;
+
+  //---------------------------------------------------------------------------------------------
+
+  // Eigen::MatrixXd T_eo_6x6(6, 6);
+  // T_eo_6x6.setZero();
+
+  // // The top-left 3x3 block is the rotation part of in_hand_pose_
+  // T_eo_6x6.topLeftCorner(3, 3) = in_hand_pose_.rotation();
+
+  // // The bottom-right 3x3 block is also the rotation part of in_hand_pose_
+  // T_eo_6x6.bottomRightCorner(3, 3) = in_hand_pose_.rotation();
+
+  // // The top-right 3x3 block handles the effect of translation on rotational motion (translation does not affect linear motion)
+  // Eigen::Matrix3d skewSymmetricMatrix = Eigen::Matrix3d::Zero();
+  // // Convert translation to a skew-symmetric matrix for cross product
+  // skewSymmetricMatrix(0, 1) = -in_hand_pose_.translation().z();
+  // skewSymmetricMatrix(0, 2) =  in_hand_pose_.translation().y();
+  // skewSymmetricMatrix(1, 0) =  in_hand_pose_.translation().z();
+  // skewSymmetricMatrix(1, 2) = -in_hand_pose_.translation().x();
+  // skewSymmetricMatrix(2, 0) = -in_hand_pose_.translation().y();
+  // skewSymmetricMatrix(2, 1) =  in_hand_pose_.translation().x();
+
+  // T_eo_6x6.topRightCorner(3, 3) = skewSymmetricMatrix;
+
+  // // Now, multiply jacobian with T_eo_6x6
+  // return T_eo_6x6 * jacobian;
 }
 
 Eigen::VectorXd BaseConstraint::calcError(const Eigen::Ref<const Eigen::VectorXd>& /*x*/) const
