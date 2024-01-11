@@ -347,12 +347,12 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
         dist = -1;
       }
     }
-    return true;
+    return false;
   }
   else
   {
     dist = 0;
-    return false;
+    return true;
   }
 }
 
