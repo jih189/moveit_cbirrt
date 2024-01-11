@@ -332,8 +332,34 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
             if(!sampleValid && invalid_reason == -2) // if the configuration is invalid due to constraint, then project.
             {
+                Eigen::VectorXd x(si_->getStateDimension());
+
+                for(int i = 0; i < si_->getStateDimension(); i++)
+                    x[i] = rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i];
+
+                // Newton's method
+                unsigned int iter = 0;
+                double norm = 0;
+                Eigen::VectorXd f(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->getCoDimension());
+                Eigen::MatrixXd j(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->getCoDimension(), si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->getAmbientDimension());
+
+                const double squaredTolerance = si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->getTolerance() * si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->getTolerance();
+
+                si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->function(x, f);
+                while ((norm = f.squaredNorm()) > squaredTolerance && iter++ <  si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->getMaxIterations())
+                {
+                    si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->jacobian(x, j);
+                    x -= (0.3 * j.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(f));
+                    si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->function(x, f);
+                }
+
+                // set value back
+                for(int i = 0; i < si_->getStateDimension(); i++)
+                    rstate->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] = x[i];
+
                 // project rstate to the constraint manifold and save it and its status into the sampling_data
-                if(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate))
+                // if(si_->getStateSpace()->as<base::ConstrainedStateSpace>()->getConstraint()->project(rstate))
+                if(norm < squaredTolerance)
                 {
                     sampleValid=si_->getStateValidityChecker()->isValid(rstate, invalid_reason);
                     sampling_data_.push_back(std::pair<base::State *, int>( si_->cloneState(rstate), (int) -invalid_reason));
