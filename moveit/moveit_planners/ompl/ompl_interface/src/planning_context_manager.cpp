@@ -399,6 +399,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
       // Select the correct type of constraints based on the path constraints in the planning request.
       ompl::base::ConstraintPtr ompl_constraint = 
 	      createOMPLConstraints(robot_model_, config.group, req.path_constraints, planning_scene);
+      ompl_constraint->setMaxIterations(600);
       
       // Create a constrained state space of type "projected state space".
       // Other types are available, so we probably should add another setting to ompl_planning.yaml
