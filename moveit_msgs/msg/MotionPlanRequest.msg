@@ -70,3 +70,6 @@ SamplingDistribution[] distribution_sequence
 
 # if this flag is set to true, then it will clean all planning context before planning.
 bool cleanPlanningContext
+
+# if this flag is set to true, then it will use the atlas information during planning.
+bool use_atlas

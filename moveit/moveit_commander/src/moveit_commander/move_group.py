@@ -790,6 +790,10 @@ class MoveGroupCommander(object):
         """Set the flag to clean the planners in moveit."""
         self._g.set_clean_planning_context_flag(flag)
 
+    def set_use_atlas_flag(self, flag):
+        """Set the flag to use atlas database."""
+        self._g.set_use_atlas_flag(flag)
+
     def set_action_with_id(self, action_name, action_id):
         """Set the action name and the action manifold id """
         self._g.set_action_with_id(action_name, action_id)

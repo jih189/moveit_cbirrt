@@ -39,7 +39,8 @@ public:
     void cleanAtlasDatabase();
     std::shared_ptr<ob::JiamingAtlasStateSpace> extract_atlas(
         const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>>& task_node_sequence, 
-        const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene, float &atlas_distribution_ratio);
+        const moveit_msgs::MotionPlanRequest& req, const planning_scene::PlanningSceneConstPtr& planning_scene, float &atlas_distribution_ratio,
+        bool use_atlas, std::vector<float> start_configuration, std::vector<float> goal_configuration);
 };
 
 }

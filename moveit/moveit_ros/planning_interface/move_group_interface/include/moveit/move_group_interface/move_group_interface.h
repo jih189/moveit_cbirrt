@@ -1001,6 +1001,8 @@ public:
 
   void setCleanPlanningContextFlag(bool flag);
 
+  void setUseAtlasFlag(bool flag);
+
   /** \brief Get the in hand pose for planning */
   const geometry_msgs::Pose& getInHandPose() const;
 

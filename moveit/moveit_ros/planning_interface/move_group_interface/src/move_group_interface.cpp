@@ -133,6 +133,7 @@ public:
     num_planning_attempts_ = 1;
     setInHandPose(0.0,0.0,0.0,0.0,0.0,0.0,1.0);
     is_cleanPlanningContext_ = false;
+    use_atlas_ = false;
     clearAction();
     node_handle_.param<double>("robot_description_planning/default_velocity_scaling_factor",
                                max_velocity_scaling_factor_, 0.1);
@@ -815,7 +816,9 @@ public:
     goal.planning_options.planning_scene_diff.is_diff = true;
     goal.planning_options.planning_scene_diff.robot_state.is_diff = true;
 
+    // reset those flags.
     setCleanPlanningContextFlag(false);
+    setUseAtlasFlag(false);
 
     move_action_client_->sendGoal(goal);
     if (!move_action_client_->waitForResult())
@@ -1149,6 +1152,7 @@ public:
       request.trajectory_constraints = *trajectory_constraints_;
 
     request.cleanPlanningContext = is_cleanPlanningContext_;
+    request.use_atlas = use_atlas_;
   }
 
   void constructGoal(moveit_msgs::MoveGroupGoal& goal) const
@@ -1324,6 +1328,11 @@ public:
     is_cleanPlanningContext_ = flag;
   }
 
+  void setUseAtlasFlag(bool flag)
+  {
+    use_atlas_ = flag;
+  }
+
   const geometry_msgs::Pose& getInHandPose() const
   {
     return in_hand_pose_;
@@ -1443,6 +1452,7 @@ private:
   std::string action_name_;
   int action_id_;
   bool is_cleanPlanningContext_;
+  bool use_atlas_;
   sensor_msgs::PointCloud obstacle_point_cloud_;
   std::vector<moveit_msgs::SamplingDistribution> distribution_;
 };
@@ -2466,6 +2476,11 @@ void MoveGroupInterface::clearInHandPose()
 void MoveGroupInterface::setCleanPlanningContextFlag(bool flag)
 {
   impl_->setCleanPlanningContextFlag(flag);
+}
+
+void MoveGroupInterface::setUseAtlasFlag(bool flag)
+{
+  impl_->setUseAtlasFlag(flag);
 }
 
 const geometry_msgs::Pose& MoveGroupInterface::getInHandPose() const

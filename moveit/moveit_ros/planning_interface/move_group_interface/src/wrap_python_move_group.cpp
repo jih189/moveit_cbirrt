@@ -661,6 +661,11 @@ public:
     setCleanPlanningContextFlag(flag);
   }
 
+  void setUseAtlasFlagPython(bool flag)
+  {
+    setUseAtlasFlag(flag);
+  }
+
   void setActionWithIdPython(const std::string action_name, const int action_id)
   {
     setActionWithId(action_name, action_id);
@@ -924,6 +929,7 @@ static void wrap_move_group_interface()
                                  getJacobianMatrixOverloads());
   move_group_interface_class.def("enforce_bounds", &MoveGroupInterfaceWrapper::enforceBoundsPython);
   move_group_interface_class.def("set_clean_planning_context_flag", &MoveGroupInterfaceWrapper::setCleanPlanningContextFlagPython);
+  move_group_interface_class.def("set_use_atlas_flag", &MoveGroupInterfaceWrapper::setUseAtlasFlagPython);
   move_group_interface_class.def("set_action_with_id", &MoveGroupInterfaceWrapper::setActionWithIdPython);
   move_group_interface_class.def("set_in_hand_pose", &MoveGroupInterfaceWrapper::setInHandPosePython);
   move_group_interface_class.def("clear_action", &MoveGroupInterfaceWrapper::clearAction);

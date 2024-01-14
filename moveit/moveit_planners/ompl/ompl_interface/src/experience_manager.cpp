@@ -19,7 +19,6 @@ ExperienceManager::~ExperienceManager()
 bool ExperienceManager::constructAtlasOfRoadmapService(moveit_msgs::ConstructAtlas::Request& req,
                                                   moveit_msgs::ConstructAtlas::Response& res)
 {
-    // std::cout << "construct Atlas in manifold (" << req.foliation_id << ", " << req.co_parameter_id << ")" << std::endl;
     OMPL_INFORM("Construct Atlas in manifold ( %d , %d ) with %d configurations", req.foliation_id, req.co_parameter_id, req.list_of_configuration_with_info.size());
     // create the ompl constraints
     // req.constraints
@@ -145,8 +144,14 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     const std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>>& task_node_sequence,
     const moveit_msgs::MotionPlanRequest& req,
     const planning_scene::PlanningSceneConstPtr& planning_scene,
-    float &atlas_distribution_ratio)
+    float &atlas_distribution_ratio,
+    bool use_atlas,
+    std::vector<float> start_configuration,
+    std::vector<float> goal_configuration
+    )
 {
+    atlas_distribution_ratio = 0;
+
     // // create a experience state space which is combined by different Atlas from manifolds.
     ob::ConstraintPtr ompl_constraint = 
         createOMPLConstraints(robot_model_, req.group_name, req.path_constraints, planning_scene);
@@ -178,8 +183,12 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     
     // The element of task_node_sequence has the format as following
     // (foliation id, co-paramenter id, distribution id, [(related co-parameter id, related beta, related similarity)])
+    unsigned int number_of_node_without_atlas = 0;
     for(auto node: task_node_sequence) // which is a list of task node equence with experience.
     {
+        if( std::get<3>(node).size() == 0 )
+            number_of_node_without_atlas++;
+
         for(auto related_node: std::get<3>(node))
         {
             // if the beta time similarity score is too low, the ignore it.
@@ -205,6 +214,29 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
         return std::get<3>(a) > std::get<3>(b);
     });
 
+    if(use_atlas) // is use atlas, then add both start and goal configurations to the search atlas state space.
+    {
+        ob::State *state = experience_state_space_->allocState();
+
+        // add the start configuration
+        for(size_t j = 0; j < robot_joint_number; j++)
+            state->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[j] = start_configuration[j];
+        experience_state_space_->combineChart(state->as<ob::JiamingAtlasStateSpace::StateType>(), 1.0);
+
+        // add the start configuration
+        for(size_t j = 0; j < robot_joint_number; j++)
+            state->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[j] = goal_configuration[j];
+        experience_state_space_->combineChart(state->as<ob::JiamingAtlasStateSpace::StateType>(), 1.0);
+
+        experience_state_space_->freeState(state);
+
+        // for this two new charts
+        beta_values.push_back(1.0);
+        beta_values.push_back(1.0);
+        beta_weight.push_back(1.0);
+        beta_weight.push_back(1.0);
+    }
+
     // std::cout << "related nodes" << std::endl;
     for(auto n: all_related_nodes)
     {
@@ -215,14 +247,14 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
         }
     }
 
-    atlas_distribution_ratio = 0;
-
     // the atlas-distribution sampling ratio is calculate the element multiplication between soft_max(similarity) and beta.
     if(beta_weight.size() > 0){
         std::vector<float> beta_weight_after_soft_max = softmax(beta_weight);
         for(unsigned int i = 0; i < beta_weight.size(); i++)
-            atlas_distribution_ratio += (beta_weight_after_soft_max[i] * beta_weight[i]);
+            atlas_distribution_ratio += (beta_weight_after_soft_max[i] * beta_values[i]);
     }
+
+    atlas_distribution_ratio *= (1.0 * (2 + task_node_sequence.size() - number_of_node_without_atlas) / (task_node_sequence.size() + 2));
 
     // combine the atlas from different nodes to the new statespace.
     return experience_state_space_;
