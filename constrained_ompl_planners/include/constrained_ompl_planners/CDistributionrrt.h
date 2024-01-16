@@ -46,7 +46,7 @@
 #include <ompl/base/spaces/constraint/ProjectedStateSpace.h>
 #include "constrained_ompl_planners/JiamingAtlasChart.h"
 #include "constrained_ompl_planners/JiamingAtlasStateSpace.h"
-#include <moveit/ompl_interface/parameterization/model_based_state_space.h>
+// #include <moveit/ompl_interface/parameterization/model_based_state_space.h>
 
 #include <Eigen/Dense>
 #include <random>
@@ -259,12 +259,14 @@ namespace ompl
             }
 
             Eigen::VectorXd sample_from_random() {
+                const std::vector<float> upper_bounds{1.6056, 1.518, 3.14159, 2.251, 3.14159, 2.16, 3.14159};
+                const std::vector<float> lower_bounds{-1.6056, -1.221, -3.14159, -2.251, -3.14159, -2.16, -3.14159};
                 Eigen::VectorXd sample_value(si_->getStateDimension());
                 for(int i = 0; i < si_->getStateDimension(); i++)
                 {
-                    double upper_bound = (*(si_->getStateSpace()->as<ompl::base::WrapperStateSpace>()->getSpace()->as<ompl_interface::ModelBasedStateSpace>()->getJointsBounds()[i]))[0].max_position_;
-                    double lower_bound = (*(si_->getStateSpace()->as<ompl::base::WrapperStateSpace>()->getSpace()->as<ompl_interface::ModelBasedStateSpace>()->getJointsBounds()[i]))[0].min_position_;
-                    sample_value[i] = rng_.uniformReal(lower_bound, upper_bound);
+                    // double upper_bound = (*(si_->getStateSpace()->as<ompl::base::WrapperStateSpace>()->getSpace()->as<ompl_interface::ModelBasedStateSpace>()->getJointsBounds()[i]))[0].max_position_;
+                    // double lower_bound = (*(si_->getStateSpace()->as<ompl::base::WrapperStateSpace>()->getSpace()->as<ompl_interface::ModelBasedStateSpace>()->getJointsBounds()[i]))[0].min_position_;
+                    sample_value[i] = rng_.uniformReal(lower_bounds[i], upper_bounds[i]);
                 }
                 return sample_value;
             }
