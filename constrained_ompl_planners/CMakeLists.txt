@@ -20,7 +20,6 @@ find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system filesystem date_time thread)
 find_package(ompl REQUIRED)
 find_package(Torch REQUIRED)
-find_package(moveit_planners_ompl REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
