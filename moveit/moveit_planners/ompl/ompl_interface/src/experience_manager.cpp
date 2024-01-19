@@ -192,7 +192,8 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
         for(auto related_node: std::get<3>(node))
         {
             // if the beta time similarity score is too low, the ignore it.
-            if(std::get<1>(related_node) * std::get<2>(related_node) < 0.1)
+            // if(std::get<1>(related_node) * std::get<2>(related_node) < 0.1)
+            if(std::get<2>(related_node) < 0.3)
                 continue;
             
             // std::cout << std::get<0>(related_node) << " " << std::get<1>(related_node) << " | ";
@@ -201,7 +202,7 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
                     (int)std::get<0>(node),
                     std::get<0>(related_node),
                     (int)std::get<2>(node),
-                    std::get<1>(related_node) * std::get<2>(related_node)
+                    std::get<2>(related_node) //std::get<1>(related_node) * std::get<2>(related_node)
                 }
             );
             beta_values.push_back(std::get<1>(related_node));
