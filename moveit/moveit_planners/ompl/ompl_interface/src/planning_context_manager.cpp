@@ -601,60 +601,63 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
 
     // // std::cout << "prepare the planning hint" << std::endl;
 
-    // Jiaming: setup the planning experience hints here.
-    // pass the task node sequence to extract related Atlas data from the database.
-    std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>> task_node_sequence;
-    for(uint c = 0; c < req.distribution_sequence.size(); c++)
-    {
-      std::vector<std::tuple<int, float, float>> related_task_nodes(req.distribution_sequence[c].related_co_parameter_index.size());
-      for(uint k = 0; k < req.distribution_sequence[c].related_co_parameter_index.size(); k++)
-      {
-        related_task_nodes[k] = std::tuple<int, float, float>{
-          req.distribution_sequence[c].related_co_parameter_index[k],
-          req.distribution_sequence[c].related_beta[k],
-          req.distribution_sequence[c].related_similarity[k]
-        };
-      }
 
-      task_node_sequence.push_back(
-        std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>{
-          req.distribution_sequence[c].foliation_id, 
-          req.distribution_sequence[c].co_parameter_id, 
-          req.distribution_sequence[c].distribution_id,
-          related_task_nodes
+    // only extract atlas if request contains constraints.
+    if(req.path_constraints.position_constraints.size() > 0 || req.path_constraints.orientation_constraints.size() > 0 )
+    {
+      std::vector<std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>> task_node_sequence;
+      for(uint c = 0; c < req.distribution_sequence.size(); c++)
+      {
+        std::vector<std::tuple<int, float, float>> related_task_nodes(req.distribution_sequence[c].related_co_parameter_index.size());
+        for(uint k = 0; k < req.distribution_sequence[c].related_co_parameter_index.size(); k++)
+        {
+          related_task_nodes[k] = std::tuple<int, float, float>{
+            req.distribution_sequence[c].related_co_parameter_index[k],
+            req.distribution_sequence[c].related_beta[k],
+            req.distribution_sequence[c].related_similarity[k]
+          };
         }
-      );
-    }
 
-    // get both start and goal configurations
-    std::vector<float> start_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
-    std::vector<float> goal_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
-    // find the joint position constraint in the goal_constraints
-    for(auto jc: req.goal_constraints){
-      if(jc.joint_constraints.size() > 0)
-      {
-        for(unsigned int j = 0; j < jc.joint_constraints.size() ; j ++)
-          goal_state_configuration[j] = jc.joint_constraints[j].position;
-        break;
+        task_node_sequence.push_back(
+          std::tuple<int, int, int, std::vector<std::tuple<int, float, float>>>{
+            req.distribution_sequence[c].foliation_id, 
+            req.distribution_sequence[c].co_parameter_id, 
+            req.distribution_sequence[c].distribution_id,
+            related_task_nodes
+          }
+        );
       }
-    }
-    for(unsigned int joint_i = 0; joint_i < start_state->getJointModelGroup(req.group_name)->getVariableCount(); joint_i++)
-    {
-      start_state_configuration[joint_i] = start_state->getVariablePosition(start_state->getJointModelGroup(req.group_name)->getVariableIndexList()[joint_i]);
+
+      // get both start and goal configurations
+      std::vector<float> start_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
+      std::vector<float> goal_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
+      // find the joint position constraint in the goal_constraints
+      for(auto jc: req.goal_constraints){
+        if(jc.joint_constraints.size() > 0)
+        {
+          for(unsigned int j = 0; j < jc.joint_constraints.size() ; j ++)
+            goal_state_configuration[j] = jc.joint_constraints[j].position;
+          break;
+        }
+      }
+      for(unsigned int joint_i = 0; joint_i < start_state->getJointModelGroup(req.group_name)->getVariableCount(); joint_i++)
+      {
+        start_state_configuration[joint_i] = start_state->getVariablePosition(start_state->getJointModelGroup(req.group_name)->getVariableIndexList()[joint_i]);
+      }
+
+      float atlas_distribution_ratio = 0.0;
+      auto atlas_ss = experience_manager_->extract_atlas(
+        task_node_sequence, 
+        req, 
+        planning_scene, 
+        atlas_distribution_ratio,
+        req.use_atlas,
+        start_state_configuration,
+        goal_state_configuration
+      );
+      context->setPlanningHint(atlas_ss, atlas_distribution_ratio);
     }
 
-    float atlas_distribution_ratio = 0.0;
-    auto atlas_ss = experience_manager_->extract_atlas(
-      task_node_sequence, 
-      req, 
-      planning_scene, 
-      atlas_distribution_ratio,
-      req.use_atlas,
-      start_state_configuration,
-      goal_state_configuration
-    );
-    context->setPlanningHint(atlas_ss, atlas_distribution_ratio);
-    
     context->setPlanningVolume(req.workspace_parameters);
     if (!context->setPathConstraints(req.path_constraints, &error_code))
       return ModelBasedPlanningContextPtr();
