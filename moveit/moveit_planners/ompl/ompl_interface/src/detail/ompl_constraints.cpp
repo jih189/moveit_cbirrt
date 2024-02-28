@@ -203,7 +203,18 @@ Eigen::MatrixXd BaseConstraint::robotGeometricJacobian(const Eigen::Ref<const Ei
   // return value (success) not used, could return a garbage jacobian.
   robot_state->getJacobian(joint_model_group_, joint_model_group_->getLinkModel(link_name_),
                            Eigen::Vector3d(0.0, 0.0, 0.0), jacobian);
-  return jacobian;
+  // return jacobian;
+
+  Eigen::Vector3d hand_to_object_in_world = robot_state->getGlobalLinkTransform(link_name_).rotation() * in_hand_pose_.translation();
+
+  Eigen::MatrixXd translation_J(6,6);
+  translation_J << 1, 0, 0, 0, hand_to_object_in_world(2), -hand_to_object_in_world(1),
+                   0, 1, 0, -hand_to_object_in_world(2), 0, hand_to_object_in_world(0),
+                   0, 0, 1, hand_to_object_in_world(1), -hand_to_object_in_world(0), 0,
+                   0, 0, 0, 1, 0, 0,
+                   0, 0, 0, 0, 1, 0,
+                   0, 0, 0, 0, 0, 1;
+  return translation_J * jacobian;
 
   // // [jiaming] calculate the adjoint matrix based on the in_hand_pose_
   // Eigen::MatrixXd p_hat(3,3);
