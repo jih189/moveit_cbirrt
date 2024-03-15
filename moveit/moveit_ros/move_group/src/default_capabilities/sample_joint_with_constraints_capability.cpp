@@ -16,18 +16,6 @@ void MoveGroupSampleJointWithConstraints::initialize()
       root_node_handle_.advertiseService(SAMPLE_JOINT_WITH_CONSTRAINTS_NAME, &MoveGroupSampleJointWithConstraints::sampleJointWithConstraintsService, this);
 }
 
-// namespace
-// {
-// bool checkSampleCollision(const planning_scene::PlanningScene* planning_scene,
-//                        moveit::core::RobotState* state, const moveit::core::JointModelGroup* jmg,
-//                        const double* ik_solution)
-// {
-//   state->setJointGroupPositions(jmg, ik_solution);
-//   state->update();
-//   return (!planning_scene || !planning_scene->isStateColliding(*state, jmg->getName()));
-// }
-// }  // namespace
-
 bool MoveGroupSampleJointWithConstraints::sampleJointWithConstraintsService(moveit_msgs::GetJointWithConstraints::Request& req,
                                                   moveit_msgs::GetJointWithConstraints::Response& res)
 {
@@ -45,25 +33,17 @@ bool MoveGroupSampleJointWithConstraints::sampleJointWithConstraintsService(move
     const moveit::core::JointModelGroup* jmg = sampled_state.getJointModelGroup(req.group_name);
     if (jmg)
     {
-        int count = 0;
-        bool has_sample = false;
-        while(count < max_num_of_attemp)
+        for(int i = 0; i < max_num_of_attemp; i++)
         {
             if(constraint_sampler.sample(sampled_state, sampled_state, 10) && 
                !(static_cast<const planning_scene::PlanningSceneConstPtr&>(ls).get()->isStateColliding(sampled_state, jmg->getName())))
             {
-                has_sample = true;
-                moveit::core::robotStateToRobotStateMsg(sampled_state, res.solution, true);
-                res.error_code.val = moveit_msgs::MoveItErrorCodes::SUCCESS;
-                break;
+                moveit_msgs::RobotState m;
+                moveit::core::robotStateToRobotStateMsg(sampled_state, m, true);
+                res.solutions.push_back(m);
             }
-            count++;
         }
-        if(!has_sample)
-            res.error_code.val = moveit_msgs::MoveItErrorCodes::FAILURE;
     }
-    else
-        res.error_code.val = moveit_msgs::MoveItErrorCodes::INVALID_GROUP_NAME;
 
   return true;
 }

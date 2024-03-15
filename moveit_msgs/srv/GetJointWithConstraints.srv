@@ -6,5 +6,4 @@ string group_name
 ---
 
 # The returned solution
-RobotState solution
-MoveItErrorCodes error_code
+RobotState[] solutions
