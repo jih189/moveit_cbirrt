@@ -422,6 +422,12 @@ public:
     }
   }
 
+  void setMultiTargetRobotState(const std::vector<std::vector<double>>& multi_robot_states)
+  {
+    setTargetType(JOINT);
+    joint_state_targets_ = multi_robot_states;
+  }
+
   moveit::core::RobotState& getTargetRobotState()
   {
     return *joint_state_target_;
@@ -820,6 +826,9 @@ public:
     setCleanPlanningContextFlag(false);
     setUseAtlasFlag(false);
 
+    // clean the multi joint states
+    joint_state_targets_.clear();
+
     move_action_client_->sendGoal(goal);
     if (!move_action_client_->waitForResult())
     {
@@ -1105,11 +1114,28 @@ public:
 
     if (active_target_ == JOINT)
     {
-      request.goal_constraints.resize(1);
-      request.goal_constraints[0] = kinematic_constraints::constructGoalConstraints(
-          getTargetRobotState(), joint_model_group_, goal_joint_tolerance_);
-      //[jiaming]
-      request.goal_constraints[0].in_hand_pose = in_hand_pose_;
+      if(joint_state_targets_.size() != 0)
+      {
+        request.goal_constraints.resize(joint_state_targets_.size());
+        for(std::size_t i = 0; i < joint_state_targets_.size(); i++){
+          moveit::core::RobotState rs_temp(getRobotModel());
+          rs_temp.setToDefaultValues();
+          rs_temp.setJointGroupPositions(getJointModelGroup(), joint_state_targets_[i]);
+          request.goal_constraints[i] = kinematic_constraints::constructGoalConstraints(
+              rs_temp, 
+              joint_model_group_, 
+              goal_joint_tolerance_);
+          request.goal_constraints[i].in_hand_pose = in_hand_pose_;
+        }
+      }
+      else
+      {
+        request.goal_constraints.resize(1);
+        request.goal_constraints[0] = kinematic_constraints::constructGoalConstraints(
+            getTargetRobotState(), joint_model_group_, goal_joint_tolerance_);
+        //[jiaming]
+        request.goal_constraints[0].in_hand_pose = in_hand_pose_;
+      }
     }
     else if (active_target_ == POSE || active_target_ == POSITION || active_target_ == ORIENTATION)
     {
@@ -1422,6 +1448,9 @@ private:
   moveit::core::RobotStatePtr joint_state_target_;
   const moveit::core::JointModelGroup* joint_model_group_;
 
+  // jiaming
+  std::vector<std::vector<double>> joint_state_targets_;
+
   // pose goal;
   // for each link we have a set of possible goal locations;
   std::map<std::string, std::vector<geometry_msgs::PoseStamped>> pose_targets_;
@@ -1719,6 +1748,12 @@ void MoveGroupInterface::setStartState(const moveit_msgs::RobotState& start_stat
 void MoveGroupInterface::setStartState(const moveit::core::RobotState& start_state)
 {
   impl_->setStartState(start_state);
+}
+
+// jiaming
+void MoveGroupInterface::setMultiTargetRobotState(const std::vector<std::vector<double>>& multi_robot_states)
+{
+  impl_->setMultiTargetRobotState(multi_robot_states);
 }
 
 void MoveGroupInterface::setStartStateToCurrentState()

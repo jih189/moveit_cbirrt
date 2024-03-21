@@ -138,7 +138,7 @@ def pointcloud_to_list(pointcloud):
         pointcloud_list.append(p.z)
     return pointcloud_list
 
-def distribution_to_list(distributions):
+def distribution_to_list(distributions, number_of_joint):
     '''
     In this function, we convert the SamplingDistribution message to a list. The format
     should be [distribution1_mean, distribution1_variance, distribution2_mean, distribution2_variance, ...]
@@ -147,6 +147,9 @@ def distribution_to_list(distributions):
     distribution_list = []
 
     for d in distributions:
+        if len(d.distribution_mean) != number_of_joint:
+            raise("The length of the mean does not match the number of joint of current group!!!")
+
         for d_value in d.distribution_mean:
             distribution_list.append(d_value)
 

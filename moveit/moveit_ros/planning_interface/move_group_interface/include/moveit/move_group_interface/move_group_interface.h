@@ -292,6 +292,10 @@ public:
    * sets that state */
   void setStartState(const moveit::core::RobotState& start_state);
 
+  /** \brief Set the multiple target joint state as vector
+  */
+  void setMultiTargetRobotState(const std::vector<std::vector<double>>& multi_robot_states);
+
   /** \brief Set the starting state for planning to be that reported by the robot's joint state publication */
   void setStartStateToCurrentState();
 

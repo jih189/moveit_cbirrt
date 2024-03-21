@@ -821,8 +821,28 @@ class MoveGroupCommander(object):
 
     def set_distribution(self, distribution):
         """Set the distribution of the object """
-        self._g.set_distribution(conversions.distribution_to_list(distribution))
+        self._g.set_distribution(conversions.distribution_to_list(distribution, self._g.get_variable_count()))
 
     def clear_distribution(self):
         """Clear the distribution of the object """
         self._g.clear_distribution()
+
+    def set_multi_target_robot_state(self, multi_target_robot_state):
+        """Set multi target robot states"""
+        number_of_joint = self._g.get_variable_count()
+
+        input = []
+
+        # chech if each state in the input has right number of dimension
+        for s in multi_target_robot_state:
+            if len(s) != number_of_joint:
+                raise MoveItCommanderException(
+                    "The number of joints of the robot state should be " + str(number_of_joint)
+                )
+            else:
+                input += s
+
+        self._g.set_multi_target_robot_state(input)
+
+        
+

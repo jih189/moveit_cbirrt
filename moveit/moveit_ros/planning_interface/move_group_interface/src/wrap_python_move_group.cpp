@@ -713,6 +713,22 @@ public:
     setObstaclePointcloud(obstacle_point_cloud);
   }
 
+  void setMultiTargetRobotStatePython(bp::list& multi_robot_states)
+  {
+    std::vector<double> v = py_bindings_tools::doubleFromList(multi_robot_states);
+    std::vector<std::vector<double>> input;
+    
+    size_t elementsPerPartition = getVariableCount();
+    size_t numPartitions = v.size() / elementsPerPartition;
+
+    auto it = v.begin();
+    for (size_t i = 0; i < numPartitions; ++i) {
+        input.emplace_back(it, it + elementsPerPartition);
+        it += elementsPerPartition;
+    }
+    setMultiTargetRobotState(input);
+  }
+
   void setDistributionPython(bp::list& distribution_list)
   {
     uint num_of_joint = getActiveJoints().size();
@@ -938,6 +954,7 @@ static void wrap_move_group_interface()
   move_group_interface_class.def("clear_obstacle_point_cloud", &MoveGroupInterfaceWrapper::clearObstaclePointcloud);
   move_group_interface_class.def("set_distribution", &MoveGroupInterfaceWrapper::setDistributionPython);
   move_group_interface_class.def("clear_distribution", &MoveGroupInterfaceWrapper::clearDistribution);
+  move_group_interface_class.def("set_multi_target_robot_state", &MoveGroupInterfaceWrapper::setMultiTargetRobotStatePython);
 }
 }  // namespace planning_interface
 }  // namespace moveit
