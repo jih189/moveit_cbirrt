@@ -146,8 +146,7 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     const planning_scene::PlanningSceneConstPtr& planning_scene,
     float &atlas_distribution_ratio,
     bool use_atlas,
-    std::vector<float> start_configuration,
-    std::vector<float> goal_configuration
+    std::vector<std::vector<float>> related_configurations
     )
 {
     atlas_distribution_ratio = 0;
@@ -219,23 +218,16 @@ std::shared_ptr<ob::JiamingAtlasStateSpace> ExperienceManager::extract_atlas(
     {
         ob::State *state = experience_state_space_->allocState();
 
-        // add the start configuration
-        for(size_t j = 0; j < robot_joint_number; j++)
-            state->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[j] = start_configuration[j];
-        experience_state_space_->combineChart(state->as<ob::JiamingAtlasStateSpace::StateType>(), 1.0);
-
-        // add the start configuration
-        for(size_t j = 0; j < robot_joint_number; j++)
-            state->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[j] = goal_configuration[j];
-        experience_state_space_->combineChart(state->as<ob::JiamingAtlasStateSpace::StateType>(), 1.0);
-
+        for(size_t t = 0; t < related_configurations.size(); t++)
+        {
+            // add the related configuration
+            for(size_t j = 0; j < robot_joint_number; j++)
+                state->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[j] = related_configurations[t][j];
+            experience_state_space_->combineChart(state->as<ob::JiamingAtlasStateSpace::StateType>(), 1.0);
+            beta_values.push_back(1.0);
+            beta_weight.push_back(1.0);
+        }
         experience_state_space_->freeState(state);
-
-        // for this two new charts
-        beta_values.push_back(1.0);
-        beta_values.push_back(1.0);
-        beta_weight.push_back(1.0);
-        beta_weight.push_back(1.0);
     }
 
     // std::cout << "related nodes" << std::endl;

@@ -629,21 +629,25 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
       }
 
       // get both start and goal configurations
-      std::vector<float> start_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
-      std::vector<float> goal_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
+      std::vector<std::vector<float>> related_configurations;
+      
       // find the joint position constraint in the goal_constraints
       for(auto jc: req.goal_constraints){
         if(jc.joint_constraints.size() > 0)
         {
+          std::vector<float> goal_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
           for(unsigned int j = 0; j < jc.joint_constraints.size() ; j ++)
             goal_state_configuration[j] = jc.joint_constraints[j].position;
-          break;
+          related_configurations.push_back(goal_state_configuration);
         }
       }
+
+      std::vector<float> start_state_configuration(start_state->getJointModelGroup(req.group_name)->getVariableCount());
       for(unsigned int joint_i = 0; joint_i < start_state->getJointModelGroup(req.group_name)->getVariableCount(); joint_i++)
       {
         start_state_configuration[joint_i] = start_state->getVariablePosition(start_state->getJointModelGroup(req.group_name)->getVariableIndexList()[joint_i]);
       }
+      related_configurations.push_back(start_state_configuration);
 
       float atlas_distribution_ratio = 0.0;
       auto atlas_ss = experience_manager_->extract_atlas(
@@ -652,8 +656,7 @@ ompl_interface::ModelBasedPlanningContextPtr ompl_interface::PlanningContextMana
         planning_scene, 
         atlas_distribution_ratio,
         req.use_atlas,
-        start_state_configuration,
-        goal_state_configuration
+        related_configurations
       );
       context->setPlanningHint(atlas_ss, atlas_distribution_ratio);
     }
