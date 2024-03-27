@@ -35,12 +35,25 @@ bool MoveGroupSampleJointWithConstraints::sampleJointWithConstraintsService(move
     {
         for(int i = 0; i < max_num_of_attemp; i++)
         {
-            if(constraint_sampler.sample(sampled_state, sampled_state, 10) && 
-               !(static_cast<const planning_scene::PlanningSceneConstPtr&>(ls).get()->isStateColliding(sampled_state, jmg->getName())))
+            // if(constraint_sampler.sample(sampled_state, sampled_state, 10) && 
+            //    !(static_cast<const planning_scene::PlanningSceneConstPtr&>(ls).get()->isStateColliding(sampled_state, jmg->getName())))
+            // {
+            //     moveit_msgs::RobotState m;
+            //     moveit::core::robotStateToRobotStateMsg(sampled_state, m, true);
+            //     res.solutions.push_back(m);
+            // }
+            if(constraint_sampler.sample(sampled_state, sampled_state, 10))
             {
-                moveit_msgs::RobotState m;
-                moveit::core::robotStateToRobotStateMsg(sampled_state, m, true);
-                res.solutions.push_back(m);
+                if(!(static_cast<const planning_scene::PlanningSceneConstPtr&>(ls).get()->isStateColliding(sampled_state, jmg->getName())))
+                {
+                    moveit_msgs::RobotState m;
+                    moveit::core::robotStateToRobotStateMsg(sampled_state, m, true);
+                    res.solutions.push_back(m);
+                }
+            }
+            else
+            {
+                return true;
             }
         }
     }
