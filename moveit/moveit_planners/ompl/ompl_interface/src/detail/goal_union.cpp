@@ -79,6 +79,7 @@ void ompl_interface::GoalSampleableRegionMux::sampleGoal(ompl::base::State* st) 
     if (goals_[gindex_]->as<ompl::base::GoalSampleableRegion>()->maxSampleCount() > 0)
     {
       goals_[gindex_]->as<ompl::base::GoalSampleableRegion>()->sampleGoal(st);
+      gindex_ = (gindex_ + 1) % goals_.size();
       return;
     }
     gindex_ = (gindex_ + 1) % goals_.size();
