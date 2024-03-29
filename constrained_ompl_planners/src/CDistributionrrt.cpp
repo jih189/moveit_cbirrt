@@ -228,6 +228,43 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
         return base::PlannerStatus::INVALID_GOAL;
     }
 
+    std::vector<Motion *> goal_states;
+    const base::State *st = pis_.nextGoal(ptc);
+
+    while(st != nullptr)
+    {
+        bool is_new_goal = true;
+        for(auto s : goal_states)
+        {
+            if(si_->distance(st, s->state) < 0.1)
+            {
+                is_new_goal = false;
+                break;
+            }
+        }
+        // this is an new goal state
+        if( is_new_goal )
+        {
+            auto *motion = new Motion(si_);
+            si_->copyState(motion->state, st);
+            motion->root = motion->state;
+
+            goal_states.push_back(motion);
+            tGoal_->add(motion);
+            st = pis_.nextGoal();
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if (tGoal_->size() == 0)
+    {
+        OMPL_ERROR("%s: There is no goal states", getName().c_str());
+        return base::PlannerStatus::INVALID_GOAL;
+    }
+
     if (!sampler_)
         sampler_ = si_->allocStateSampler();
 
@@ -261,23 +298,29 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
         startTree_ = !startTree_;
         TreeData &otherTree = startTree_ ? tStart_ : tGoal_;
 
-        if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
-        {
-            const base::State *st = tGoal_->size() == 0 ? pis_.nextGoal(ptc) : pis_.nextGoal();
-            if (st != nullptr)
-            {
-                auto *motion = new Motion(si_);
-                si_->copyState(motion->state, st);
-                motion->root = motion->state;
-                tGoal_->add(motion);
-            }
+        // if (tGoal_->size() == 0 || pis_.getSampledGoalsCount() < tGoal_->size() / 2)
+        // {
+        //     const base::State *st = tGoal_->size() == 0 ? pis_.nextGoal(ptc) : pis_.nextGoal();
+        //     if (st != nullptr)
+        //     {
+        //         std::cout << "sample state: ";
+        //         for(int i = 0; i < si_->getStateDimension(); i++)
+        //             std::cout << st->as<ompl::base::WrapperStateSpace::StateType>()->getState()->as<ompl::base::RealVectorStateSpace::StateType>()->values[i] << " ";
+        //         std::cout << std::endl;
 
-            if (tGoal_->size() == 0)
-            {
-                OMPL_ERROR("%s: Unable to sample any valid states for goal tree", getName().c_str());
-                break;
-            }
-        }
+        //         // check if the sample goal state is in the tGoal_ or not. If it is, then ignore.
+        //         auto *motion = new Motion(si_);
+        //         si_->copyState(motion->state, st);
+        //         motion->root = motion->state;
+        //         tGoal_->add(motion);
+        //     }
+
+        //     if (tGoal_->size() == 0)
+        //     {
+        //         OMPL_ERROR("%s: Unable to sample any valid states for goal tree", getName().c_str());
+        //         break;
+        //     }
+        // }
 
         /* sample random state */
         /* When the state is not compounded state, then you should use following code to assign state.
