@@ -357,6 +357,8 @@ ompl::base::PlannerStatus ompl::geometric::CDISTRIBUTIONRRT::solve(const base::P
 
             if(gaussian_distributions_.size() != 0 && ((double) rand() / (RAND_MAX)) < sample_ratio_) // if random number is less than sample ratio, then sample from distribution sequence
             {
+                // if we are using ALEF, all gaussian's covariance should be zeros. Therefore, in this case,
+                // sample_from_distribution_sequence will select one gaussian's mean randomly and return it.
                 sample_value = ((double) rand() / (RAND_MAX)) >= atlas_distribution_ratio_ ? 
                                         sample_from_distribution_sequence(gaussian_distributions_, dist, gen) : sample_from_atlas();
             }

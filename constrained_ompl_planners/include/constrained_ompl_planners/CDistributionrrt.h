@@ -241,6 +241,13 @@ namespace ompl
 
             /** \brief Sample a joint configuration with a gaussian distribution and random generator */
             Eigen::VectorXd sample_from_gaussian(const Gaussian& gaussian, std::mt19937& gen) {
+
+                // if covariance is all zeros, then return the mean directly.
+                if(gaussian.covariance.isZero())
+                {
+                    return gaussian.mean;
+                }
+
                 Eigen::MatrixXd L = gaussian.covariance.llt().matrixL();
 
                 std::normal_distribution<> dist(0, 1);
