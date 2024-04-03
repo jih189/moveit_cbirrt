@@ -757,6 +757,8 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
     distribution_means.reserve(request_.distribution_sequence.size());
     distribution_covariances.reserve(request_.distribution_sequence.size());
 
+    double current_sample_ratio = sample_ratio_;
+
     for(unsigned int i = 0; i < request_.distribution_sequence.size(); i++)
     {
       const moveit_msgs::SamplingDistribution distribution = request_.distribution_sequence[i];
@@ -777,13 +779,17 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
         }
       }
 
+      // This modification is very ugly.
+      if(covariance.isZero()) // if one covariance is all zero, then it means we are using alef, then the sample ratio should be 0.4.
+        current_sample_ratio = 0.4;
+
       distribution_means.push_back(mean);
       distribution_covariances.push_back(covariance);
     }
 
     if(planner->getName().find("CDISTRIBUTIONRRT") != std::string::npos)
     {
-      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances, sample_ratio_, planning_hint_, planning_bias_);
+      planner->as<ompl::geometric::CDISTRIBUTIONRRT>()->setDistribution(distribution_means, distribution_covariances, current_sample_ratio, planning_hint_, planning_bias_);
     }
     else
     {
