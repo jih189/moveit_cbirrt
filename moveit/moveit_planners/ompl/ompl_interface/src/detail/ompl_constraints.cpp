@@ -197,7 +197,11 @@ std::vector<std::size_t> BoxConstraint::getConstrainedDims(const moveit_msgs::Po
   const auto dims = pos_con.constraint_region.primitives.at(0).dimensions;
   for (std::size_t i = 0; i < dims.size(); ++i)
   {
-    if (dims.at(i) > 0 && dims.at(i) != std::numeric_limits<double>::infinity())
+    // if (dims.at(i) > 0 && dims.at(i) != std::numeric_limits<double>::infinity())
+    // {
+    //   constrained_dims.push_back(i);
+    // }
+    if (dims.at(i) > 0 && dims.at(i) < 10.0)
     {
       constrained_dims.push_back(i);
     }
@@ -297,18 +301,24 @@ OrientationConstraint::getConstrainedDims(const moveit_msgs::OrientationConstrai
   std::vector<std::size_t> constrained_dims;
   // If a tolerance is < 0 or infinity dont constrain it
 
-  if (ori_con.absolute_x_axis_tolerance > 0 &&
-      ori_con.absolute_x_axis_tolerance != std::numeric_limits<double>::infinity())
+  // if (ori_con.absolute_x_axis_tolerance > 0 && 
+  //     ori_con.absolute_x_axis_tolerance != std::numeric_limits<double>::infinity())
+  if (ori_con.absolute_x_axis_tolerance > 0 && 
+      ori_con.absolute_x_axis_tolerance < 6.28)
   {
     constrained_dims.push_back(0);
   }
+  // if (ori_con.absolute_x_axis_tolerance > 0 &&
+  //     ori_con.absolute_y_axis_tolerance != std::numeric_limits<double>::infinity())
   if (ori_con.absolute_x_axis_tolerance > 0 &&
-      ori_con.absolute_y_axis_tolerance != std::numeric_limits<double>::infinity())
+      ori_con.absolute_y_axis_tolerance < 6.28)
   {
     constrained_dims.push_back(1);
   }
+  // if (ori_con.absolute_x_axis_tolerance > 0 &&
+  //     ori_con.absolute_z_axis_tolerance != std::numeric_limits<double>::infinity())
   if (ori_con.absolute_x_axis_tolerance > 0 &&
-      ori_con.absolute_z_axis_tolerance != std::numeric_limits<double>::infinity())
+      ori_con.absolute_z_axis_tolerance < 6.28)
   {
     constrained_dims.push_back(2);
   }
