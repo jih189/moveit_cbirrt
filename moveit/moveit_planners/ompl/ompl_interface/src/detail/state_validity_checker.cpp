@@ -269,10 +269,11 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
 {  
   /*
     dist case:
-    -1: state outside bounds or collision detected.
+    -1: collision detected.
     -2: state violates path constraints.
     -3: state is infeasible. This should be ignored later.
     -4: state causes the manipulated object to collide with the environment.
+    -5: state outside bounds
   */
   assert(wrapped_state != nullptr);
   // Unwrap the state from a ConstrainedStateSpace::StateType
@@ -306,7 +307,7 @@ bool ompl_interface::ConstrainedPlanningStateValidityChecker::isValid(const ompl
   // do not use the unwrapped state here, as satisfiesBounds expects a state of type ConstrainedStateSpace::StateType
   if (!si_->satisfiesBounds(wrapped_state))  // si_ = ompl::base::SpaceInformation
   {
-    dist = -1;
+    dist = -5;
     ROS_DEBUG_NAMED(LOGNAME, "State outside bounds");
     const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid(0.0);
     return false;
