@@ -252,8 +252,8 @@ namespace ompl
 
                 std::normal_distribution<> dist(0, 1);
 
-                Eigen::VectorXd z(7);
-                for (int i = 0; i < 7; ++i) {
+                Eigen::VectorXd z(gaussian.mean.size());
+                for (int i = 0; i < gaussian.mean.size(); ++i) {
                     z(i) = dist(gen);
                 }
 
